@@ -1,9 +1,16 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  createBrowserRouter,
+  Outlet,
+  RouterProvider,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 
 import { AppShell } from '@/components/layout/AppShell'
+import { RouteErrorPage } from '@/components/layout/RouteErrorPage'
 import { RequireAuth } from '@/components/layout/RequireAuth'
 import { Toaster } from '@/components/ui/sonner'
 import { WizardShell } from '@/components/wizard/WizardShell'
@@ -38,6 +45,59 @@ function AuthRedirect({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Outlet />,
+    errorElement: <RouteErrorPage />,
+    children: [
+      { index: true, element: <Landing /> },
+      {
+        path: 'login',
+        element: (
+          <AuthRedirect>
+            <Login />
+          </AuthRedirect>
+        ),
+      },
+      {
+        path: 'signup',
+        element: (
+          <AuthRedirect>
+            <Signup />
+          </AuthRedirect>
+        ),
+      },
+      {
+        path: 'app',
+        element: <RequireAuth />,
+        children: [
+          {
+            element: <AppShell />,
+            children: [
+              { index: true, element: <Dashboard /> },
+              { path: 'new', element: <WizardShell /> },
+              {
+                path: 's/:id',
+                element: <ScenarioDetail />,
+                children: [
+                  { index: true, element: <FrameworkView /> },
+                  { path: 'thread', element: <ThreadView /> },
+                  { path: 'signals', element: <SignalsView /> },
+                  { path: 'narrative', element: <NarrativeView /> },
+                  { path: 'export', element: <ExportView /> },
+                ],
+              },
+              { path: 'workspace', element: <WorkspaceSettings /> },
+              { path: 'settings', element: <AccountSettings /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+])
+
 const rootEl = document.getElementById('root')
 if (!rootEl) {
   throw new Error('Root element #root not found')
@@ -48,42 +108,7 @@ createRoot(rootEl).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Toaster richColors position="top-center" />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route
-              path="/login"
-              element={
-                <AuthRedirect>
-                  <Login />
-                </AuthRedirect>
-              }
-            />
-            <Route
-              path="/signup"
-              element={
-                <AuthRedirect>
-                  <Signup />
-                </AuthRedirect>
-              }
-            />
-            <Route path="/app" element={<RequireAuth />}>
-              <Route element={<AppShell />}>
-                <Route index element={<Dashboard />} />
-                <Route path="new" element={<WizardShell />} />
-                <Route path="s/:id" element={<ScenarioDetail />}>
-                  <Route index element={<FrameworkView />} />
-                  <Route path="thread" element={<ThreadView />} />
-                  <Route path="signals" element={<SignalsView />} />
-                  <Route path="narrative" element={<NarrativeView />} />
-                  <Route path="export" element={<ExportView />} />
-                </Route>
-                <Route path="workspace" element={<WorkspaceSettings />} />
-                <Route path="settings" element={<AccountSettings />} />
-              </Route>
-            </Route>
-          </Routes>
-        </BrowserRouter>
+        <RouterProvider router={router} />
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

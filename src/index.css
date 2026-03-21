@@ -157,13 +157,12 @@
   }
 }
 
-/* Full-width app root — avoid fixed-width / centered columns from legacy template */
+/* Full-width app root — do not use flex here; it can collapse nested route trees to 0 height */
 #root {
   min-height: 100svh;
   width: 100%;
   margin: 0;
-  display: flex;
-  flex-direction: column;
+  display: block;
   box-sizing: border-box;
 }
 
