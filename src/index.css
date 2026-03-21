@@ -1,11 +1,32 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/inter/wght.css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* QMSR brand (light) */
+  --brand-bg: #f8f7f4;
+  --brand-card: #ffffff;
+  --brand-card-alt: #f4f1eb;
+  --brand-border: #ddd6ca;
+  --brand-text: #181612;
+  --brand-muted: #615a50;
+  --brand-accent: #9c3f2f;
+  --brand-accent-bg: #faeee9;
+  --brand-accent-border: #efc3b5;
+  --brand-warn-bg: #fff0e9;
+  --brand-warn-border: #d26b53;
+  --brand-warn-text: #8f3528;
+  --brand-partial-bg: #f6f0dc;
+  --brand-partial-border: #c59b2f;
+  --brand-partial-text: #6d5212;
+  --brand-good-bg: #eaf5ef;
+  --brand-good-border: #5b9b73;
+  --brand-good-text: #204d33;
+
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -18,8 +39,8 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;
+  --heading: Georgia, ui-serif, serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -99,6 +120,25 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --brand-bg: #121110;
+    --brand-card: #1b1916;
+    --brand-card-alt: #24211c;
+    --brand-border: #38332b;
+    --brand-text: #f4efe7;
+    --brand-muted: #b5ab9b;
+    --brand-accent: #e38a73;
+    --brand-accent-bg: #2a1d19;
+    --brand-accent-border: #5c3d32;
+    --brand-warn-bg: #2a1d19;
+    --brand-warn-border: #e38a73;
+    --brand-warn-text: #ffd0c4;
+    --brand-partial-bg: #2b2617;
+    --brand-partial-border: #b89a3a;
+    --brand-partial-text: #f3dd98;
+    --brand-good-bg: #16281e;
+    --brand-good-border: #4a8a62;
+    --brand-good-text: #b8e2c5;
+
     --text: #9ca3af;
     --text-h: #f3f4f6;
     --bg: #16171d;
@@ -135,7 +175,6 @@ body {
 
 h1,
 h2 {
-  font-family: var(--heading);
   font-weight: 500;
   color: var(--text-h);
 }
@@ -178,8 +217,9 @@ code {
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-heading: var(--font-serif);
+  --font-sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-serif: Georgia, ui-serif, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -221,6 +261,25 @@ code {
 }
 
 .dark {
+  --brand-bg: #121110;
+  --brand-card: #1b1916;
+  --brand-card-alt: #24211c;
+  --brand-border: #38332b;
+  --brand-text: #f4efe7;
+  --brand-muted: #b5ab9b;
+  --brand-accent: #e38a73;
+  --brand-accent-bg: #2a1d19;
+  --brand-accent-border: #5c3d32;
+  --brand-warn-bg: #2a1d19;
+  --brand-warn-border: #e38a73;
+  --brand-warn-text: #ffd0c4;
+  --brand-partial-bg: #2b2617;
+  --brand-partial-border: #b89a3a;
+  --brand-partial-text: #f3dd98;
+  --brand-good-bg: #16281e;
+  --brand-good-border: #4a8a62;
+  --brand-good-text: #b8e2c5;
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -256,8 +315,25 @@ code {
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;}
-  body {
-    @apply bg-background text-foreground;}
+    @apply border-border outline-ring/50;
+  }
   html {
-    @apply font-sans;}}
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif;
+  }
+}
+
+/* `border-brand-accent` uses accent border token (distinct from `border-brand-accent-border` utility) */
+@layer utilities {
+  .border-brand-accent {
+    border-color: var(--brand-accent-border);
+  }
+}

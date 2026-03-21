@@ -7,12 +7,22 @@ import { defineConfig } from 'vite'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+const src = path.resolve(__dirname, './src')
+
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/',
+  build: {
+    outDir: 'dist',
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@/lib', replacement: path.join(src, 'lib') },
+      { find: '@/components', replacement: path.join(src, 'components') },
+      { find: '@/types', replacement: path.join(src, 'types') },
+      { find: '@/hooks', replacement: path.join(src, 'hooks') },
+      { find: '@', replacement: src },
+    ],
   },
 })
