@@ -1,5 +1,5 @@
 -- Scenarios: users own their own; org members see org scenarios
--- PLAN.md lists `for insert update delete` without commas; PostgreSQL requires `FOR INSERT, UPDATE, DELETE`.
+-- PostgreSQL allows one command per policy: use FOR ALL with USING + WITH CHECK when writes need both.
 alter table scenarios enable row level security;
 
 create policy "Users can CRUD their own scenarios"
@@ -19,8 +19,18 @@ create policy "Org members can read org scenarios"
   );
 
 create policy "Org admins/owners can write org scenarios"
-  on scenarios for insert, update, delete
+  on scenarios for all
   using (
+    org_id is not null and
+    exists (
+      select 1 from org_members
+      where org_id = scenarios.org_id
+        and user_id = auth.uid()
+        and role in ('owner', 'admin')
+        and accepted_at is not null
+    )
+  )
+  with check (
     org_id is not null and
     exists (
       select 1 from org_members
@@ -66,6 +76,14 @@ create policy "Users can see their own memberships"
 create policy "Org admins/owners can manage membership"
   on org_members for all
   using (
+    exists (
+      select 1 from org_members m2
+      where m2.org_id = org_members.org_id
+        and m2.user_id = auth.uid()
+        and m2.role in ('owner', 'admin')
+    )
+  )
+  with check (
     exists (
       select 1 from org_members m2
       where m2.org_id = org_members.org_id

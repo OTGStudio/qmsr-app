@@ -1,0 +1,88 @@
+import type { FDAData } from './analysis';
+
+export type QMSAreaKey = 'mgmt' | 'dd' | 'prod' | 'change' | 'out' | 'meas';
+
+export type RatingValue = 'unknown' | 'weak' | 'partial' | 'strong';
+
+export type InspectionType =
+  | 'baseline'
+  | 'nonBaseline'
+  | 'compliance'
+  | 'forcause'
+  | 'spra'
+  | 'pmaPre'
+  | 'pmaPost'
+  | 'premarketReview';
+
+export type ScenarioRatings = Record<QMSAreaKey, RatingValue>;
+
+export interface WizardStepProps {
+  scenario: Scenario;
+  onUpdate: (patch: Partial<Scenario>) => void;
+}
+
+export interface Scenario {
+  id?: string;
+  name: string;
+  notes?: string;
+  // Facility
+  productName: string;
+  companyName: string;
+  feiNumber: string;
+  // Inspection (optional until selected in wizard step 2)
+  inspType?: InspectionType;
+  marketedUS: boolean;
+  // Classification
+  pathway: 'standard' | 'denovo';
+  manualClass: '1' | '2' | '3' | 'F' | 'U';
+  classSource: 'manual' | 'lookup';
+  deviceClass?: string;
+  productCode: string;
+  regulationNum: string;
+  // Risk
+  risk: string;
+  signals: string[];
+  aiEnabled: boolean;
+  swEnabled: boolean;
+  cyberEnabled: boolean;
+  pccpPlanned: boolean;
+  // Self-assessment
+  ratings: ScenarioRatings;
+  areaNotes: Record<QMSAreaKey, string>;
+  // FDA data cache
+  fdaData?: FDAData | null;
+  fdaPulledAt?: string | null;
+}
+
+export const DEFAULT_RATINGS = {
+  mgmt: 'unknown',
+  dd: 'unknown',
+  prod: 'unknown',
+  change: 'unknown',
+  out: 'unknown',
+  meas: 'unknown',
+} satisfies ScenarioRatings;
+
+export const DEFAULT_SCENARIO = {
+  name: 'Untitled scenario',
+  productName: '',
+  companyName: '',
+  feiNumber: '',
+  marketedUS: true,
+  pathway: 'standard',
+  manualClass: '2',
+  classSource: 'manual',
+  deviceClass: '',
+  productCode: '',
+  regulationNum: '',
+  risk: '',
+  signals: [],
+  aiEnabled: false,
+  swEnabled: false,
+  cyberEnabled: false,
+  pccpPlanned: false,
+  ratings: DEFAULT_RATINGS,
+  areaNotes: { mgmt: '', dd: '', prod: '', change: '', out: '', meas: '' },
+  fdaData: null,
+  fdaPulledAt: null,
+} satisfies Scenario;

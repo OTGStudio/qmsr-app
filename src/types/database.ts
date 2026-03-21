@@ -1,8 +1,3 @@
-/**
- * Supabase-generated database types for the `public` schema.
- * Regenerate when the schema changes (Docker running):
- *   npx supabase gen types typescript --local > src/types/database.ts
- */
 export type Json =
   | string
   | number
@@ -12,233 +7,238 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
   public: {
     Tables: {
+      org_members: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          id: string
+          invited_email: string | null
+          org_id: string | null
+          role: Database["public"]["Enums"]["org_role"] | null
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          id?: string
+          invited_email?: string | null
+          org_id?: string | null
+          role?: Database["public"]["Enums"]["org_role"] | null
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          id?: string
+          invited_email?: string | null
+          org_id?: string | null
+          role?: Database["public"]["Enums"]["org_role"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
+          created_at: string | null
           id: string
           name: string
           slug: string
-          created_at: string | null
           updated_at: string | null
         }
         Insert: {
+          created_at?: string | null
           id?: string
           name: string
           slug: string
-          created_at?: string | null
           updated_at?: string | null
         }
         Update: {
+          created_at?: string | null
           id?: string
           name?: string
           slug?: string
-          created_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
-      org_members: {
-        Row: {
-          id: string
-          org_id: string | null
-          user_id: string | null
-          role: Database['public']['Enums']['org_role']
-          invited_email: string | null
-          accepted_at: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          org_id?: string | null
-          user_id?: string | null
-          role?: Database['public']['Enums']['org_role']
-          invited_email?: string | null
-          accepted_at?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          org_id?: string | null
-          user_id?: string | null
-          role?: Database['public']['Enums']['org_role']
-          invited_email?: string | null
-          accepted_at?: string | null
-          created_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'org_members_org_id_fkey'
-            columns: ['org_id']
-            isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       scenarios: {
         Row: {
+          ai_enabled: boolean | null
+          area_notes: Json | null
+          class_source: string | null
+          company_name: string | null
+          created_at: string | null
+          cyber_enabled: boolean | null
+          device_class: string | null
+          fda_data: Json | null
+          fda_pulled_at: string | null
+          fei_number: string | null
           id: string
-          user_id: string | null
-          org_id: string | null
+          insp_type: string
+          manual_class: string | null
+          marketed_us: boolean | null
           name: string
           notes: string | null
-          product_name: string | null
-          company_name: string | null
-          fei_number: string | null
-          insp_type: string
-          marketed_us: boolean | null
+          org_id: string | null
           pathway: string | null
-          manual_class: string | null
-          class_source: string | null
-          device_class: string | null
+          pccp_planned: boolean | null
           product_code: string | null
+          product_name: string | null
+          ratings: Json | null
           regulation_num: string | null
           risk: string | null
           signals: string[] | null
-          ai_enabled: boolean | null
           sw_enabled: boolean | null
-          cyber_enabled: boolean | null
-          pccp_planned: boolean | null
-          ratings: Json | null
-          area_notes: Json | null
-          fda_data: Json | null
-          fda_pulled_at: string | null
-          created_at: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
+          ai_enabled?: boolean | null
+          area_notes?: Json | null
+          class_source?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          cyber_enabled?: boolean | null
+          device_class?: string | null
+          fda_data?: Json | null
+          fda_pulled_at?: string | null
+          fei_number?: string | null
           id?: string
-          user_id?: string | null
-          org_id?: string | null
+          insp_type?: string
+          manual_class?: string | null
+          marketed_us?: boolean | null
           name?: string
           notes?: string | null
-          product_name?: string | null
-          company_name?: string | null
-          fei_number?: string | null
-          insp_type?: string
-          marketed_us?: boolean | null
+          org_id?: string | null
           pathway?: string | null
-          manual_class?: string | null
-          class_source?: string | null
-          device_class?: string | null
+          pccp_planned?: boolean | null
           product_code?: string | null
+          product_name?: string | null
+          ratings?: Json | null
           regulation_num?: string | null
           risk?: string | null
           signals?: string[] | null
-          ai_enabled?: boolean | null
           sw_enabled?: boolean | null
-          cyber_enabled?: boolean | null
-          pccp_planned?: boolean | null
-          ratings?: Json | null
-          area_notes?: Json | null
-          fda_data?: Json | null
-          fda_pulled_at?: string | null
-          created_at?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
+          ai_enabled?: boolean | null
+          area_notes?: Json | null
+          class_source?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          cyber_enabled?: boolean | null
+          device_class?: string | null
+          fda_data?: Json | null
+          fda_pulled_at?: string | null
+          fei_number?: string | null
           id?: string
-          user_id?: string | null
-          org_id?: string | null
+          insp_type?: string
+          manual_class?: string | null
+          marketed_us?: boolean | null
           name?: string
           notes?: string | null
-          product_name?: string | null
-          company_name?: string | null
-          fei_number?: string | null
-          insp_type?: string
-          marketed_us?: boolean | null
+          org_id?: string | null
           pathway?: string | null
-          manual_class?: string | null
-          class_source?: string | null
-          device_class?: string | null
+          pccp_planned?: boolean | null
           product_code?: string | null
+          product_name?: string | null
+          ratings?: Json | null
           regulation_num?: string | null
           risk?: string | null
           signals?: string[] | null
-          ai_enabled?: boolean | null
           sw_enabled?: boolean | null
-          cyber_enabled?: boolean | null
-          pccp_planned?: boolean | null
-          ratings?: Json | null
-          area_notes?: Json | null
-          fda_data?: Json | null
-          fda_pulled_at?: string | null
-          created_at?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'scenarios_org_id_fkey'
-            columns: ['org_id']
+            foreignKeyName: "scenarios_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
       stripe_customers: {
         Row: {
-          user_id: string
-          customer_id: string
           created_at: string | null
+          customer_id: string
+          user_id: string
         }
         Insert: {
-          user_id: string
-          customer_id: string
           created_at?: string | null
+          customer_id: string
+          user_id: string
         }
         Update: {
-          user_id?: string
-          customer_id?: string
           created_at?: string | null
+          customer_id?: string
+          user_id?: string
         }
         Relationships: []
       }
       subscriptions: {
         Row: {
-          id: string
-          user_id: string | null
-          org_id: string | null
-          stripe_sub_id: string
-          stripe_price_id: string
-          status: Database['public']['Enums']['subscription_status']
-          current_period_end: string | null
           cancel_at_period_end: boolean | null
           created_at: string | null
+          current_period_end: string | null
+          id: string
+          org_id: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_price_id: string
+          stripe_sub_id: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          id?: string
-          user_id?: string | null
-          org_id?: string | null
-          stripe_sub_id: string
-          stripe_price_id: string
-          status: Database['public']['Enums']['subscription_status']
-          current_period_end?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          org_id?: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_price_id: string
+          stripe_sub_id: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          id?: string
-          user_id?: string | null
-          org_id?: string | null
-          stripe_sub_id?: string
-          stripe_price_id?: string
-          status?: Database['public']['Enums']['subscription_status']
-          current_period_end?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          org_id?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_price_id?: string
+          stripe_sub_id?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'subscriptions_org_id_fkey'
-            columns: ['org_id']
+            foreignKeyName: "subscriptions_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -250,14 +250,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      org_role: 'owner' | 'admin' | 'member'
+      org_role: "owner" | "admin" | "member"
       subscription_status:
-        | 'active'
-        | 'trialing'
-        | 'past_due'
-        | 'canceled'
-        | 'unpaid'
-        | 'incomplete'
+        | "active"
+        | "trialing"
+        | "past_due"
+        | "canceled"
+        | "unpaid"
+        | "incomplete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -265,9 +265,135 @@ export type Database = {
   }
 }
 
-export type Tables<T extends keyof Database['public']['Tables']> =
-  Database['public']['Tables'][T]['Row']
-export type TablesInsert<T extends keyof Database['public']['Tables']> =
-  Database['public']['Tables'][T]['Insert']
-export type TablesUpdate<T extends keyof Database['public']['Tables']> =
-  Database['public']['Tables'][T]['Update']
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      org_role: ["owner", "admin", "member"],
+      subscription_status: [
+        "active",
+        "trialing",
+        "past_due",
+        "canceled",
+        "unpaid",
+        "incomplete",
+      ],
+    },
+  },
+} as const

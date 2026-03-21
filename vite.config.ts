@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -24,5 +25,8 @@ export default defineConfig({
       { find: '@/hooks', replacement: path.join(src, 'hooks') },
       { find: '@', replacement: src },
     ],
+  },
+  test: {
+    environment: 'jsdom',
   },
 })
