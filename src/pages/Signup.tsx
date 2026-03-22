@@ -61,7 +61,7 @@ export function Signup() {
     <AuthPageShell title="Create account">
       <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
         <div className="space-y-2">
-          <label htmlFor="signup-email" className="text-sm font-medium text-brand-text">
+          <label htmlFor="signup-email" className="text-sm font-medium text-foreground">
             Email
           </label>
           <Input
@@ -79,7 +79,7 @@ export function Signup() {
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="signup-password" className="text-sm font-medium text-brand-text">
+          <label htmlFor="signup-password" className="text-sm font-medium text-foreground">
             Password
           </label>
           <Input
@@ -100,7 +100,7 @@ export function Signup() {
         <div className="space-y-2">
           <label
             htmlFor="signup-confirm-password"
-            className="text-sm font-medium text-brand-text"
+            className="text-sm font-medium text-foreground"
           >
             Confirm password
           </label>
@@ -123,11 +123,11 @@ export function Signup() {
           {submitting ? 'Creating account…' : 'Create account'}
         </Button>
       </form>
-      <p className="mt-4 text-sm text-brand-muted">
+      <p className="mt-4 text-sm text-muted-foreground">
         Already have an account?{' '}
         <Link
           to="/login"
-          className="font-medium text-brand-accent underline-offset-4 hover:underline"
+          className="font-medium text-primary underline-offset-4 hover:underline"
         >
           Sign in
         </Link>

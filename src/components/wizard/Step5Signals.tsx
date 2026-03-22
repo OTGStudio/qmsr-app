@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { SIGNALS } from '@/lib/domain';
+import { wizardPillToggleClass } from '@/lib/wizardToggleStyles';
 import { cn } from '@/lib/utils';
 import type { WizardStepProps } from '@/types/scenario';
 
@@ -91,13 +92,7 @@ export function Step5Signals({ scenario, onUpdate }: WizardStepProps) {
                   toggleSignal(signal);
                 }}
                 aria-pressed={on}
-                className={cn(
-                  'rounded-full border px-3 py-2 text-left text-sm leading-snug transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                  on
-                    ? 'border-brand-accent bg-brand-accent-bg font-medium text-brand-text'
-                    : 'border-transparent bg-muted/60 text-brand-muted hover:bg-muted dark:bg-muted/40',
-                )}
+                className={wizardPillToggleClass(on, 'comfortable')}
               >
                 {signal}
               </button>
@@ -158,6 +153,7 @@ export function Step5Signals({ scenario, onUpdate }: WizardStepProps) {
             onClick={() => {
               addCustom();
             }}
+            className="min-h-9 min-w-[5rem] shrink-0 sm:min-w-[5.5rem]"
           >
             Add
           </Button>

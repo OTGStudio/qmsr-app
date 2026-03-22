@@ -24,13 +24,15 @@ export function AuthPageShell({ title, children }: AuthPageShellProps) {
       </header>
       <div className="flex flex-1 flex-col justify-start px-4 py-10 sm:justify-center sm:py-12">
         <div className="mx-auto w-full max-w-md">
-          <Card className="w-full border-brand-border shadow-sm">
+          <Card className="w-full border-brand-border bg-card text-card-foreground shadow-sm">
             <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-left font-serif text-2xl font-semibold text-brand-text">
+              <CardTitle className="text-left font-serif text-2xl font-semibold text-card-foreground">
                 {title}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0 text-left [&_a]:text-brand-accent">{children}</CardContent>
+            <CardContent className="pt-0 text-left text-card-foreground [&_a]:text-primary">
+              {children}
+            </CardContent>
           </Card>
         </div>
       </div>

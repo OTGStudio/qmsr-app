@@ -17,6 +17,7 @@ import {
   fetchClassification,
   mapClassificationDeviceClassToManual,
 } from '@/lib/fda';
+import { wizardPillToggleClass } from '@/lib/wizardToggleStyles';
 import { cn } from '@/lib/utils';
 import type { ClassificationResult } from '@/types/analysis';
 import type { WizardStepProps } from '@/types/scenario';
@@ -104,12 +105,9 @@ export function Step3Classification({ scenario, onUpdate }: WizardStepProps) {
                 onUpdate({ pathway: 'standard' });
               }}
               aria-pressed={scenario.pathway === 'standard'}
-              className={cn(
-                'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
-                'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                scenario.pathway === 'standard'
-                  ? 'border-brand-accent bg-brand-accent-bg text-brand-text'
-                  : 'border-brand-border bg-brand-card text-brand-muted hover:border-brand-muted',
+              className={wizardPillToggleClass(
+                scenario.pathway === 'standard',
+                'compact',
               )}
             >
               Standard — 510(k) / PMA / HDE
@@ -124,12 +122,9 @@ export function Step3Classification({ scenario, onUpdate }: WizardStepProps) {
                 });
               }}
               aria-pressed={scenario.pathway === 'denovo'}
-              className={cn(
-                'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
-                'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                scenario.pathway === 'denovo'
-                  ? 'border-brand-accent bg-brand-accent-bg text-brand-text'
-                  : 'border-brand-border bg-brand-card text-brand-muted hover:border-brand-muted',
+              className={wizardPillToggleClass(
+                scenario.pathway === 'denovo',
+                'compact',
               )}
             >
               De Novo
@@ -231,7 +226,7 @@ export function Step3Classification({ scenario, onUpdate }: WizardStepProps) {
             onClick={() => {
               void handleLookup();
             }}
-            className="text-brand-muted hover:bg-muted/60 hover:text-brand-text"
+            className="text-brand-muted hover:bg-brand-card-alt hover:text-brand-text"
           >
             {lookupLoading ? (
               <>

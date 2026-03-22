@@ -203,8 +203,8 @@ export function WizardShell() {
                   <li key={label} className="min-w-0 flex-1">
                     <div
                       className={cn(
-                        'w-full rounded-md px-1.5 py-2 text-center text-[0.65rem] font-medium leading-tight shadow-sm sm:text-xs',
-                        'bg-muted text-foreground dark:bg-zinc-800 dark:text-zinc-50',
+                        'w-full rounded-md border border-brand-accent-border px-1.5 py-2 text-center text-[0.65rem] font-semibold leading-tight text-brand-text shadow-sm sm:text-xs',
+                        'bg-brand-accent-bg',
                       )}
                       aria-current="step"
                     >

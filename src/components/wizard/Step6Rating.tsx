@@ -135,7 +135,7 @@ export function Step6Rating({ scenario, onUpdate }: WizardStepProps) {
                         'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
                         active
                           ? RATING_ACTIVE_CLASS[ratingKey]
-                          : 'border-brand-border bg-brand-card text-brand-muted hover:bg-muted/50 dark:bg-brand-card',
+                          : 'border-brand-border bg-brand-card text-brand-muted hover:bg-brand-card hover:text-brand-text dark:bg-brand-card',
                       )}
                     >
                       {RLABELS[ratingKey]}

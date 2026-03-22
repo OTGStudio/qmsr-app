@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { wizardPillToggleClass } from '@/lib/wizardToggleStyles';
 import { cn } from '@/lib/utils';
 import { INSPECTION_TYPE_ORDER, ITYPES } from '@/lib/domain';
 import type { InspectionType, WizardStepProps } from '@/types/scenario';
@@ -157,12 +158,9 @@ export function Step2Inspection({ scenario, onUpdate }: WizardStepProps) {
                 onUpdate({ marketedUS: true });
               }}
               aria-pressed={scenario.marketedUS === true}
-              className={cn(
-                'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
-                'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                scenario.marketedUS
-                  ? 'border-brand-accent bg-brand-accent-bg text-brand-text'
-                  : 'border-brand-border bg-brand-card text-brand-muted hover:border-brand-muted',
+              className={wizardPillToggleClass(
+                scenario.marketedUS === true,
+                'compact',
               )}
             >
               Yes — currently marketed
@@ -173,12 +171,9 @@ export function Step2Inspection({ scenario, onUpdate }: WizardStepProps) {
                 onUpdate({ marketedUS: false });
               }}
               aria-pressed={scenario.marketedUS === false}
-              className={cn(
-                'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
-                'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                !scenario.marketedUS
-                  ? 'border-brand-accent bg-brand-accent-bg text-brand-text'
-                  : 'border-brand-border bg-brand-card text-brand-muted hover:border-brand-muted',
+              className={wizardPillToggleClass(
+                scenario.marketedUS === false,
+                'compact',
               )}
             >
               No — not yet marketed

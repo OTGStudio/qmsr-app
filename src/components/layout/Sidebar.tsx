@@ -11,8 +11,8 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
     isActive
-      ? "bg-brand-accent-bg text-brand-accent"
-      : "text-brand-text hover:bg-muted/80 dark:hover:bg-muted/50"
+      ? "bg-brand-accent-bg font-semibold text-brand-text"
+      : "text-brand-text hover:bg-brand-card-alt"
   )
 
 export function Sidebar({ onNavigate, className }: SidebarProps) {
