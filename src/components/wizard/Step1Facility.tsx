@@ -12,7 +12,14 @@ const inputClassName = cn(
   'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
 );
 
-export function Step1Facility({ scenario, onUpdate }: WizardStepProps) {
+export function Step1Facility({
+  scenario,
+  onUpdate,
+  fieldIdPrefix = '',
+  wizardLayout = 'guided',
+}: WizardStepProps) {
+  const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
+
   return (
     <Card className="border-brand-border bg-brand-card">
       <CardHeader className="space-y-2 pb-2">
@@ -27,19 +34,21 @@ export function Step1Facility({ scenario, onUpdate }: WizardStepProps) {
         <h2 className="font-serif text-2xl font-normal leading-snug text-brand-text">
           Who is this assessment for?
         </h2>
-        <p className="text-sm leading-relaxed text-brand-muted">
-          These fields are optional. Leave them blank for a generic inspection-readiness
-          framework, or add company and device details to tailor outputs to your context.
-        </p>
+        {wizardLayout === 'guided' ? (
+          <p className="text-sm leading-relaxed text-brand-muted">
+            These fields are optional. Leave them blank for a generic inspection-readiness
+            framework, or add company and device details to tailor outputs to your context.
+          </p>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-6 pt-2">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className={fieldLabelClass} htmlFor="wizard-company-name">
+            <label className={fieldLabelClass} htmlFor={fid('wizard-company-name')}>
               Company name
             </label>
             <Input
-              id="wizard-company-name"
+              id={fid('wizard-company-name')}
               name="companyName"
               autoComplete="organization"
               value={scenario.companyName}
@@ -51,11 +60,11 @@ export function Step1Facility({ scenario, onUpdate }: WizardStepProps) {
             />
           </div>
           <div>
-            <label className={fieldLabelClass} htmlFor="wizard-product-name">
+            <label className={fieldLabelClass} htmlFor={fid('wizard-product-name')}>
               Product / device name
             </label>
             <Input
-              id="wizard-product-name"
+              id={fid('wizard-product-name')}
               name="productName"
               autoComplete="off"
               value={scenario.productName}
@@ -70,13 +79,13 @@ export function Step1Facility({ scenario, onUpdate }: WizardStepProps) {
 
         <div className="max-w-[220px]">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
-            <label className={fieldLabelClass} htmlFor="wizard-fei-number">
+            <label className={fieldLabelClass} htmlFor={fid('wizard-fei-number')}>
               FEI number
             </label>
             <span className="text-xs font-normal text-brand-muted">(optional)</span>
           </div>
           <Input
-            id="wizard-fei-number"
+            id={fid('wizard-fei-number')}
             name="feiNumber"
             inputMode="numeric"
             autoComplete="off"

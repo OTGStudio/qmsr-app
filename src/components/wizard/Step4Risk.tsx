@@ -83,7 +83,8 @@ function ToggleRow({ label, labelSuffix, hint, checked, disabled, onToggle }: To
   );
 }
 
-export function Step4Risk({ scenario, onUpdate }: WizardStepProps) {
+export function Step4Risk({ scenario, onUpdate, fieldIdPrefix = '' }: WizardStepProps) {
+  const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
   const riskTrimmed = scenario.risk.trim();
   const showRiskLengthWarn = riskTrimmed.length > 0 && riskTrimmed.length < 20;
   const aiOn = scenario.aiEnabled;
@@ -137,7 +138,7 @@ export function Step4Risk({ scenario, onUpdate }: WizardStepProps) {
 
           <div>
             <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
-              <label className="text-xs font-semibold text-brand-text" htmlFor="wizard-risk-text">
+              <label className="text-xs font-semibold text-brand-text" htmlFor={fid('wizard-risk-text')}>
                 Primary risk statement
                 <span className="text-brand-warn-text"> *</span>
               </label>
@@ -146,7 +147,7 @@ export function Step4Risk({ scenario, onUpdate }: WizardStepProps) {
               </span>
             </div>
             <Textarea
-              id="wizard-risk-text"
+              id={fid('wizard-risk-text')}
               name="risk"
               value={scenario.risk}
               onChange={(e) => {

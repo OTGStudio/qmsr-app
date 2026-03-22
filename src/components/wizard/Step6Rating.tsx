@@ -32,7 +32,8 @@ const areaByKey = Object.fromEntries(QMS_AREAS.map((a) => [a.key, a])) as Record
   (typeof QMS_AREAS)[number]
 >;
 
-export function Step6Rating({ scenario, onUpdate }: WizardStepProps) {
+export function Step6Rating({ scenario, onUpdate, fieldIdPrefix = '' }: WizardStepProps) {
+  const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
   const isM2 =
     scenario.inspType != null && ITYPES[scenario.inspType].model === 2;
 
@@ -145,7 +146,7 @@ export function Step6Rating({ scenario, onUpdate }: WizardStepProps) {
               </div>
 
               <Textarea
-                id={`wizard-area-note-${areaKey}`}
+                id={fid(`wizard-area-note-${areaKey}`)}
                 name={`areaNote-${areaKey}`}
                 value={scenario.areaNotes[areaKey]}
                 onChange={(e) => {

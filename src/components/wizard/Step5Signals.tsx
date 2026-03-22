@@ -16,7 +16,8 @@ const inputClassName = cn(
 
 const CANONICAL_SIGNAL_SET = new Set(SIGNALS);
 
-export function Step5Signals({ scenario, onUpdate }: WizardStepProps) {
+export function Step5Signals({ scenario, onUpdate, fieldIdPrefix = '' }: WizardStepProps) {
+  const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
   const [customInput, setCustomInput] = useState('');
 
   const customSignals = useMemo(
@@ -131,7 +132,7 @@ export function Step5Signals({ scenario, onUpdate }: WizardStepProps) {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Input
-            id="wizard-custom-signal"
+            id={fid('wizard-custom-signal')}
             name="customSignal"
             value={customInput}
             onChange={(e) => {

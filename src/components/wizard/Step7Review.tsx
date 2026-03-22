@@ -12,7 +12,7 @@ import {
   isPremarket,
 } from '@/lib/domain';
 import { cn } from '@/lib/utils';
-import type { QMSAreaKey, RatingValue, Scenario } from '@/types/scenario';
+import type { QMSAreaKey, RatingValue, Scenario, WizardLayoutMode } from '@/types/scenario';
 
 const CANONICAL_SIGNAL_SET = new Set(SIGNALS);
 
@@ -32,6 +32,7 @@ export interface Step7ReviewProps {
   scenario: Scenario;
   onComplete: (scenario: Scenario) => void;
   isLaunchPending?: boolean;
+  wizardLayout?: WizardLayoutMode;
 }
 
 function ReviewRow({ label, value }: { label: string; value: string }) {
@@ -63,6 +64,7 @@ export function Step7Review({
   scenario,
   onComplete,
   isLaunchPending = false,
+  wizardLayout = 'guided',
 }: Step7ReviewProps) {
   const inspType = scenario.inspType;
   const inspDef = inspType != null ? ITYPES[inspType] : undefined;
@@ -106,7 +108,9 @@ export function Step7Review({
           )}
           role="alert"
         >
-          No inspection type selected. Return to Step 2.
+          {wizardLayout === 'freeform'
+            ? 'No inspection type selected. Choose one in the Inspection section above.'
+            : 'No inspection type selected. Return to Step 2.'}
         </div>
       ) : null}
 
@@ -128,7 +132,9 @@ export function Step7Review({
             Review your inputs
           </h2>
           <p className="text-sm text-brand-muted">
-            Click Back to make changes. When ready, launch the framework.
+            {wizardLayout === 'freeform'
+              ? 'Edit any section above, then launch the framework when ready.'
+              : 'Click Back to make changes. When ready, launch the framework.'}
           </p>
         </CardHeader>
       </Card>

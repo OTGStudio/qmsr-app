@@ -16,9 +16,15 @@ export type InspectionType =
 
 export type ScenarioRatings = Record<QMSAreaKey, RatingValue>;
 
+/** Guided = one step at a time; freeform = all sections on one page (same data). */
+export type WizardLayoutMode = 'guided' | 'freeform';
+
 export interface WizardStepProps {
   scenario: Scenario;
   onUpdate: (patch: Partial<Scenario>) => void;
+  /** Prefixed to control `id`s when multiple steps mount (freeform). */
+  fieldIdPrefix?: string;
+  wizardLayout?: WizardLayoutMode;
 }
 
 export interface Scenario {

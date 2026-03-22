@@ -14,7 +14,11 @@ import { useCreateScenario } from '@/hooks/useCreateScenario';
 import { PENDING_SCENARIO_STORAGE_KEY } from '@/lib/scenarioMapper';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/AuthProvider';
-import { DEFAULT_SCENARIO, type Scenario } from '@/types/scenario';
+import {
+  DEFAULT_SCENARIO,
+  type Scenario,
+  type WizardLayoutMode,
+} from '@/types/scenario';
 
 import { Step1Facility } from './Step1Facility';
 import { Step2Inspection } from './Step2Inspection';
@@ -47,6 +51,7 @@ export function WizardShell() {
   const createMutation = useCreateScenario();
 
   const [step, setStep] = useState(1);
+  const [wizardLayout, setWizardLayout] = useState<WizardLayoutMode>('guided');
   const [scenario, setScenario] = useState<Scenario>(() => ({
     ...DEFAULT_SCENARIO,
   }));
@@ -77,6 +82,16 @@ export function WizardShell() {
 
   const goToStep = useCallback((target: number) => {
     setStep(target);
+    scrollToTop();
+  }, []);
+
+  const enterFreeformLayout = useCallback(() => {
+    setWizardLayout('freeform');
+    scrollToTop();
+  }, []);
+
+  const enterGuidedLayout = useCallback(() => {
+    setWizardLayout('guided');
     scrollToTop();
   }, []);
 
@@ -144,10 +159,10 @@ export function WizardShell() {
     [user, createMutation, navigate],
   );
 
-  const stepProps = { scenario, onUpdate: update };
-
   const loginHref = `/login?redirect=${encodeURIComponent(AUTH_REDIRECT_PATH)}`;
   const signupHref = `/signup?redirect=${encodeURIComponent(AUTH_REDIRECT_PATH)}`;
+
+  const isFreeform = wizardLayout === 'freeform';
 
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text">
@@ -171,126 +186,197 @@ export function WizardShell() {
         </DialogContent>
       </Dialog>
 
-      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8 pb-28">
+      <div
+        className={cn(
+          'mx-auto flex flex-col gap-6 px-4 py-8',
+          isFreeform ? 'max-w-5xl pb-16' : 'max-w-2xl pb-28',
+        )}
+      >
         <header className="flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-4">
-            <p className="text-xs text-brand-muted">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <p className="min-w-0 text-xs text-brand-muted">
               Educational tool — generic and non-tailored by design. Not a substitute for
               professional regulatory consulting. Does not create a consulting relationship
               with Respress Solutions LLC.
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                navigate('/app');
-              }}
-              className="shrink-0 text-sm font-medium text-brand-accent underline-offset-4 hover:underline"
-            >
-              Skip wizard
-            </button>
+            {isFreeform ? (
+              <button
+                type="button"
+                onClick={enterGuidedLayout}
+                className="shrink-0 self-end text-sm font-medium text-brand-accent underline-offset-4 hover:underline sm:self-auto"
+              >
+                Step-by-step wizard
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={enterFreeformLayout}
+                className="shrink-0 self-end text-sm font-medium text-brand-accent underline-offset-4 hover:underline sm:self-auto"
+              >
+                Skip wizard
+              </button>
+            )}
           </div>
         </header>
 
-        <nav aria-label="Wizard progress">
-          <ol className="flex flex-wrap gap-1 sm:flex-nowrap">
-            {STEP_LABELS.map((label, i) => {
-              const stepNum = i + 1;
-              const isActive = stepNum === step;
-              const isFuture = stepNum > step;
+        {isFreeform ? (
+          <nav aria-label="Jump to section" className="flex flex-wrap gap-2 border-b border-brand-border pb-3">
+            {STEP_LABELS.map((label, i) => (
+              <a
+                key={label}
+                href={`#wizard-step-${i + 1}`}
+                className="text-xs font-medium text-brand-accent underline-offset-4 hover:underline sm:text-sm"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        ) : (
+          <nav aria-label="Wizard progress">
+            <ol className="flex flex-wrap gap-1 sm:flex-nowrap">
+              {STEP_LABELS.map((label, i) => {
+                const stepNum = i + 1;
+                const isActive = stepNum === step;
+                const isFuture = stepNum > step;
 
-              if (isActive) {
+                if (isActive) {
+                  return (
+                    <li key={label} className="min-w-0 flex-1">
+                      <div
+                        className={cn(
+                          'w-full rounded-md border border-brand-accent-border px-1.5 py-2 text-center text-[0.65rem] font-semibold leading-tight text-brand-text shadow-sm sm:text-xs',
+                          'bg-brand-accent-bg',
+                        )}
+                        aria-current="step"
+                      >
+                        {label}
+                      </div>
+                    </li>
+                  );
+                }
+
+                if (isFuture) {
+                  return (
+                    <li key={label} className="min-w-0 flex-1">
+                      <span
+                        className={cn(
+                          'block w-full cursor-default rounded-md px-1.5 py-2 text-center text-[0.65rem] font-medium leading-tight text-brand-muted sm:text-xs',
+                        )}
+                      >
+                        {label}
+                      </span>
+                    </li>
+                  );
+                }
+
                 return (
                   <li key={label} className="min-w-0 flex-1">
-                    <div
+                    <button
+                      type="button"
+                      onClick={() => {
+                        goToStep(stepNum);
+                      }}
                       className={cn(
-                        'w-full rounded-md border border-brand-accent-border px-1.5 py-2 text-center text-[0.65rem] font-semibold leading-tight text-brand-text shadow-sm sm:text-xs',
-                        'bg-brand-accent-bg',
-                      )}
-                      aria-current="step"
-                    >
-                      {label}
-                    </div>
-                  </li>
-                );
-              }
-
-              if (isFuture) {
-                return (
-                  <li key={label} className="min-w-0 flex-1">
-                    <span
-                      className={cn(
-                        'block w-full cursor-default rounded-md px-1.5 py-2 text-center text-[0.65rem] font-medium leading-tight text-brand-muted sm:text-xs',
+                        'w-full cursor-pointer rounded-md px-1.5 py-2 text-center text-[0.65rem] font-medium leading-tight text-brand-accent transition-colors hover:underline sm:text-xs',
                       )}
                     >
                       {label}
-                    </span>
+                    </button>
                   </li>
                 );
-              }
-
-              return (
-                <li key={label} className="min-w-0 flex-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      goToStep(stepNum);
-                    }}
-                    className={cn(
-                      'w-full cursor-pointer rounded-md px-1.5 py-2 text-center text-[0.65rem] font-medium leading-tight text-brand-accent transition-colors hover:underline sm:text-xs',
-                    )}
-                  >
-                    {label}
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
+              })}
+            </ol>
+          </nav>
+        )}
 
         <div className="flex-1">
-          {step === 1 && <Step1Facility {...stepProps} />}
-          {step === 2 && <Step2Inspection {...stepProps} />}
-          {step === 3 && <Step3Classification {...stepProps} />}
-          {step === 4 && <Step4Risk {...stepProps} />}
-          {step === 5 && <Step5Signals {...stepProps} />}
-          {step === 6 && <Step6Rating {...stepProps} />}
-          {step === 7 && (
-            <Step7Review
-              scenario={scenario}
-              onComplete={(s) => {
-                void handleWizardComplete(s);
-              }}
-              isLaunchPending={createMutation.isPending}
-            />
+          {isFreeform ? (
+            <div className="space-y-10">
+              <section id="wizard-step-1" className="scroll-mt-6">
+                <Step1Facility
+                  scenario={scenario}
+                  onUpdate={update}
+                  wizardLayout="freeform"
+                  fieldIdPrefix="sp1-"
+                />
+              </section>
+              <section id="wizard-step-2" className="scroll-mt-6">
+                <Step2Inspection scenario={scenario} onUpdate={update} wizardLayout="freeform" />
+              </section>
+              <section id="wizard-step-3" className="scroll-mt-6">
+                <Step3Classification
+                  scenario={scenario}
+                  onUpdate={update}
+                  fieldIdPrefix="sp3-"
+                />
+              </section>
+              <section id="wizard-step-4" className="scroll-mt-6">
+                <Step4Risk scenario={scenario} onUpdate={update} fieldIdPrefix="sp4-" />
+              </section>
+              <section id="wizard-step-5" className="scroll-mt-6">
+                <Step5Signals scenario={scenario} onUpdate={update} fieldIdPrefix="sp5-" />
+              </section>
+              <section id="wizard-step-6" className="scroll-mt-6">
+                <Step6Rating scenario={scenario} onUpdate={update} fieldIdPrefix="sp6-" />
+              </section>
+              <section id="wizard-step-7" className="scroll-mt-6">
+                <Step7Review
+                  scenario={scenario}
+                  onComplete={(s) => {
+                    void handleWizardComplete(s);
+                  }}
+                  isLaunchPending={createMutation.isPending}
+                  wizardLayout="freeform"
+                />
+              </section>
+            </div>
+          ) : (
+            <>
+              {step === 1 && <Step1Facility scenario={scenario} onUpdate={update} />}
+              {step === 2 && <Step2Inspection scenario={scenario} onUpdate={update} />}
+              {step === 3 && <Step3Classification scenario={scenario} onUpdate={update} />}
+              {step === 4 && <Step4Risk scenario={scenario} onUpdate={update} />}
+              {step === 5 && <Step5Signals scenario={scenario} onUpdate={update} />}
+              {step === 6 && <Step6Rating scenario={scenario} onUpdate={update} />}
+              {step === 7 && (
+                <Step7Review
+                  scenario={scenario}
+                  onComplete={(s) => {
+                    void handleWizardComplete(s);
+                  }}
+                  isLaunchPending={createMutation.isPending}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-brand-border bg-brand-bg/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-brand-bg/80">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-4">
-          {step > 1 ? (
-            <Button type="button" variant="outline" onClick={goBack}>
-              Back
-            </Button>
-          ) : (
-            <span className="w-[72px]" aria-hidden />
-          )}
-
-          <p className="text-sm text-brand-muted">
-            Step {step} of 7
-          </p>
-
-          <div className="flex w-[120px] justify-end">
-            {step < 7 ? (
-              <Button type="button" disabled={!canProceed()} onClick={goNext}>
-                Continue
+      {!isFreeform ? (
+        <footer className="fixed bottom-0 left-0 right-0 border-t border-brand-border bg-brand-bg/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-brand-bg/80">
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-4">
+            {step > 1 ? (
+              <Button type="button" variant="outline" onClick={goBack}>
+                Back
               </Button>
             ) : (
               <span className="w-[72px]" aria-hidden />
             )}
+
+            <p className="text-sm text-brand-muted">Step {step} of 7</p>
+
+            <div className="flex w-[120px] justify-end">
+              {step < 7 ? (
+                <Button type="button" disabled={!canProceed()} onClick={goNext}>
+                  Continue
+                </Button>
+              ) : (
+                <span className="w-[72px]" aria-hidden />
+              )}
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      ) : null}
     </div>
   );
 }

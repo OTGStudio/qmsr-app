@@ -31,7 +31,11 @@ function isModel2Type(
   return t === 'baseline' || t === 'pmaPre' || t === 'premarketReview';
 }
 
-export function Step2Inspection({ scenario, onUpdate }: WizardStepProps) {
+export function Step2Inspection({
+  scenario,
+  onUpdate,
+  wizardLayout = 'guided',
+}: WizardStepProps) {
   const selected = scenario.inspType;
   const selectedDef = selected != null ? ITYPES[selected] : undefined;
   const showModel2Callout =
@@ -52,13 +56,15 @@ export function Step2Inspection({ scenario, onUpdate }: WizardStepProps) {
           <h2 className="font-serif text-2xl font-normal leading-snug text-brand-text">
             What type of inspection is this?
           </h2>
-          <p className="text-sm leading-relaxed text-brand-muted">
-            <span className="font-medium text-brand-text">Model 1</span> uses risk-based navigation
-            across QMS areas (not all areas are required at minimum depth).{' '}
-            <span className="font-medium text-brand-text">Model 2</span> requires coverage of all
-            six QMS areas at minimum depth. Choose the inspection type that best matches FDA’s
-            stated purpose for the inspection.
-          </p>
+          {wizardLayout === 'guided' ? (
+            <p className="text-sm leading-relaxed text-brand-muted">
+              <span className="font-medium text-brand-text">Model 1</span> uses risk-based navigation
+              across QMS areas (not all areas are required at minimum depth).{' '}
+              <span className="font-medium text-brand-text">Model 2</span> requires coverage of all
+              six QMS areas at minimum depth. Choose the inspection type that best matches FDA’s
+              stated purpose for the inspection.
+            </p>
+          ) : null}
         </CardHeader>
         <CardContent className="space-y-6 pt-2">
           {scenario.inspType == null ? (

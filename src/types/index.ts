@@ -23,6 +23,7 @@ export type {
   RatingValue,
   Scenario,
   ScenarioRatings,
+  WizardLayoutMode,
   WizardStepProps,
 } from './scenario';
 

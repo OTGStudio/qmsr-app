@@ -39,7 +39,12 @@ const MANUAL_CLASS_OPTIONS = [
   { value: 'U' as const, label: CLASS_LABELS['U'] },
 ];
 
-export function Step3Classification({ scenario, onUpdate }: WizardStepProps) {
+export function Step3Classification({
+  scenario,
+  onUpdate,
+  fieldIdPrefix = '',
+}: WizardStepProps) {
+  const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResults, setLookupResults] = useState<ClassificationResult[]>([]);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -154,11 +159,11 @@ export function Step3Classification({ scenario, onUpdate }: WizardStepProps) {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="min-w-0">
-            <label className={fieldLabelClass} htmlFor="wizard-product-code">
+            <label className={fieldLabelClass} htmlFor={fid('wizard-product-code')}>
               Product code
             </label>
             <Input
-              id="wizard-product-code"
+              id={fid('wizard-product-code')}
               name="productCode"
               autoComplete="off"
               value={scenario.productCode}
@@ -170,11 +175,11 @@ export function Step3Classification({ scenario, onUpdate }: WizardStepProps) {
             />
           </div>
           <div className="min-w-0">
-            <label className={fieldLabelClass} htmlFor="wizard-regulation-num">
+            <label className={fieldLabelClass} htmlFor={fid('wizard-regulation-num')}>
               Regulation number
             </label>
             <Input
-              id="wizard-regulation-num"
+              id={fid('wizard-regulation-num')}
               name="regulationNum"
               autoComplete="off"
               value={scenario.regulationNum}
