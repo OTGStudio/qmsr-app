@@ -365,6 +365,14 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# JWT is validated inside the function via supabase.auth.getUser(accessToken).
+# Relying on the gateway default verify_jwt can 401 valid browser sessions in some deployments.
+[functions.narrative]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

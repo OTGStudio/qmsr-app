@@ -57,15 +57,21 @@ async function narrativeErrorMessage(error: unknown): Promise<string> {
   if (isFunctionsHttpError(error)) {
     const parsed = (await error.context.json().catch(() => null)) as unknown;
     const fromBody = messageFromErrorBody(parsed);
-    if (fromBody) {
-      const lower = fromBody.toLowerCase();
-      if (error.context.status === 401 || lower.includes('unauthorized') || lower.includes('jwt')) {
-        return 'Session was rejected by the narrative service (often an expired login). Sign out, sign in again, then retry.';
+    const status = error.context.status;
+
+    if (status === 401) {
+      if (fromBody) {
+        const lower = fromBody.toLowerCase();
+        const isGeneric = fromBody === 'Unauthorized' || lower === 'unauthorized';
+        if (!isGeneric) {
+          return fromBody;
+        }
       }
-      return fromBody;
-    }
-    if (error.context.status === 401) {
       return 'Session was rejected by the narrative service (often an expired login). Sign out, sign in again, then retry.';
+    }
+
+    if (fromBody) {
+      return fromBody;
     }
     return error.message;
   }
