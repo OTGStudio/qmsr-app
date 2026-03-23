@@ -18,15 +18,24 @@ Deno.serve(async (req) => {
     });
   }
 
+  const accessToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!accessToken) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+  }
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     { global: { headers: { Authorization: authHeader } } },
   );
+  // In Edge Functions there is no persisted auth session; pass the JWT explicitly.
   const {
     data: { user },
     error: authErr,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser(accessToken);
   if (authErr || !user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
