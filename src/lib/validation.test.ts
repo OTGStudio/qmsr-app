@@ -27,21 +27,21 @@ describe('validateFEI', () => {
     const result = validateFEI('123456789');
     expect(result).not.toBeNull();
     expect(result!.code).toBe('FEI_FORMAT');
-    expect(result!.message).toContain('exactly 10 digits');
+    expect(result!.message).toContain('exactly 10 numeric digits');
   });
 
   it('returns error for 11 digits', () => {
     const result = validateFEI('12345678901');
     expect(result).not.toBeNull();
     expect(result!.code).toBe('FEI_FORMAT');
-    expect(result!.message).toContain('exactly 10 digits');
+    expect(result!.message).toContain('exactly 10 numeric digits');
   });
 
   it('returns error for alpha characters', () => {
     const result = validateFEI('300ABC4567');
     expect(result).not.toBeNull();
     expect(result!.code).toBe('FEI_FORMAT');
-    expect(result!.message).toContain('numbers only');
+    expect(result!.message).toContain('no letters');
   });
 
   it('returns error for FEI with spaces', () => {
@@ -93,6 +93,81 @@ describe('validateScenario', () => {
       const result = validateScenario(baselineClean());
       expect(result.errors).toEqual([]);
     });
+
+    it('FEI verification_failed blocks launch only after user-initiated lookup', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: {
+          version: 1,
+          status: 'verification_failed',
+          fei: '1234567890',
+          userInitiatedLookup: true,
+          checkedAt: '2026-01-01T00:00:00.000Z',
+        },
+      };
+      const result = validateScenario(s);
+      expect(result.errors.some((e) => e.code === 'FEI_VERIFICATION_FAILED')).toBe(true);
+    });
+
+    it('FEI not_found blocks launch only after user-initiated lookup', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: {
+          version: 1,
+          status: 'not_found',
+          fei: '1234567890',
+          userInitiatedLookup: true,
+          checkedAt: '2026-01-01T00:00:00.000Z',
+        },
+      };
+      const result = validateScenario(s);
+      expect(result.errors.some((e) => e.code === 'FEI_NOT_FOUND_AFTER_LOOKUP')).toBe(true);
+    });
+
+    it('FEI not_found does not block when lookup was not user-initiated', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: {
+          version: 1,
+          status: 'not_found',
+          fei: '1234567890',
+          userInitiatedLookup: false,
+          checkedAt: '2026-01-01T00:00:00.000Z',
+        },
+      };
+      const result = validateScenario(s);
+      expect(result.errors.some((e) => e.code === 'FEI_NOT_FOUND_AFTER_LOOKUP')).toBe(false);
+    });
+
+    it('FEI verification not attempted does not block launch', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: null,
+      };
+      const result = validateScenario(s);
+      expect(result.errors.some((e) => e.code === 'FEI_VERIFICATION_FAILED')).toBe(false);
+      expect(result.errors.some((e) => e.code === 'FEI_NOT_FOUND_AFTER_LOOKUP')).toBe(false);
+    });
+
+    it('lookup_unavailable does not block launch', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: {
+          version: 1,
+          status: 'lookup_unavailable',
+          fei: '1234567890',
+          userInitiatedLookup: true,
+          checkedAt: '2026-01-01T00:00:00.000Z',
+        },
+      };
+      const result = validateScenario(s);
+      expect(result.errors.length).toBe(0);
+    });
   });
 
   describe('warnings', () => {
@@ -120,7 +195,7 @@ describe('validateScenario', () => {
     it('marketedUS:false + MDR increase signal returns POSTMARKET_SIGNAL_ON_PREMARKET', () => {
       const s: Scenario = {
         ...pmaPremarket(),
-        signals: ['MDR increase'],
+        signals: ['mdr_increase'],
       };
       const result = validateScenario(s);
       expect(result.warnings.some((w) => w.code === 'POSTMARKET_SIGNAL_ON_PREMARKET')).toBe(true);
@@ -134,6 +209,70 @@ describe('validateScenario', () => {
     it('marketedUS:false + no postmarket signals returns NO postmarket warning', () => {
       const result = validateScenario(pmaPremarket()); // signals: []
       expect(result.warnings.some((w) => w.code === 'POSTMARKET_SIGNAL_ON_PREMARKET')).toBe(false);
+    });
+
+    it('valid FEI + possible_match returns FEI_POSSIBLE_MATCH warning after user lookup', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: {
+          version: 1,
+          status: 'possible_match',
+          fei: '1234567890',
+          userInitiatedLookup: true,
+          checkedAt: '2026-01-01T00:00:00.000Z',
+        },
+      };
+      const result = validateScenario(s);
+      expect(result.warnings.some((w) => w.code === 'FEI_POSSIBLE_MATCH')).toBe(true);
+    });
+
+    it('valid FEI + lookup_unavailable returns FEI_LOOKUP_UNAVAILABLE warning', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: {
+          version: 1,
+          status: 'lookup_unavailable',
+          fei: '1234567890',
+          userInitiatedLookup: true,
+          checkedAt: '2026-01-01T00:00:00.000Z',
+        },
+      };
+      const result = validateScenario(s);
+      expect(result.warnings.some((w) => w.code === 'FEI_LOOKUP_UNAVAILABLE')).toBe(true);
+    });
+
+    it('matched establishment does not add FEI blocking errors', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: {
+          version: 1,
+          status: 'matched',
+          fei: '1234567890',
+          userInitiatedLookup: true,
+          checkedAt: '2026-01-01T00:00:00.000Z',
+        },
+      };
+      const result = validateScenario(s);
+      expect(
+        result.errors.some(
+          (e) => e.code === 'FEI_VERIFICATION_FAILED' || e.code === 'FEI_NOT_FOUND_AFTER_LOOKUP',
+        ),
+      ).toBe(false);
+    });
+  });
+
+  describe('notices', () => {
+    it('valid FEI format with no verification adds FEI_VERIFICATION_NOT_ATTEMPTED notice', () => {
+      const s: Scenario = {
+        ...baselineClean(),
+        feiNumber: '1234567890',
+        feiVerification: null,
+      };
+      const result = validateScenario(s);
+      expect(result.notices.some((n) => n.code === 'FEI_VERIFICATION_NOT_ATTEMPTED')).toBe(true);
     });
   });
 });

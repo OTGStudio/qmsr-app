@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useCreateScenario } from '@/hooks/useCreateScenario';
-import { PENDING_SCENARIO_STORAGE_KEY } from '@/lib/scenarioMapper';
+import { mergePendingScenarioIntoDefault, PENDING_SCENARIO_STORAGE_KEY } from '@/lib/scenarioMapper';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/AuthProvider';
 import {
@@ -123,7 +123,7 @@ export function WizardShell() {
 
     try {
       const parsed = JSON.parse(raw) as Partial<Scenario>;
-      setScenario({ ...DEFAULT_SCENARIO, ...parsed });
+      setScenario(mergePendingScenarioIntoDefault(parsed));
       setStep(7);
       sessionStorage.removeItem(PENDING_SCENARIO_STORAGE_KEY);
       toast.success('Your scenario was restored. Tap Launch to save.');

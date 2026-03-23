@@ -6,6 +6,15 @@ const anthropic = new Anthropic({
   apiKey: Deno.env.get('ANTHROPIC_API_KEY')!,
 });
 
+const DEFAULT_SYSTEM = [
+  'You are a regulatory writing assistant for FDA QMSR (CP 7382.850) inspection readiness.',
+  'You MUST treat the user message as the only source of facts.',
+  'FORBIDDEN: inventing recalls, MDR counts, prior inspections, CAPAs, design failures, software defects, supplier failures, or any fact not explicitly present in the user message.',
+  'FORBIDDEN: asserting that a signal exists unless it appears in the user message under normalized scenario signals or FDA/triangulation sections.',
+  'REQUIRED: separate factual restatement from interpretive commentary; use conditional wording when evidence is incomplete.',
+  'Do not use QSIT-era subsystem framing.',
+].join('\n');
+
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -31,7 +40,6 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     { global: { headers: { Authorization: authHeader } } },
   );
-  // In Edge Functions there is no persisted auth session; pass the JWT explicitly.
   const {
     data: { user },
     error: authErr,
@@ -45,18 +53,39 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
-    if (!prompt) {
-      return new Response(JSON.stringify({ error: 'prompt is required' }), {
-        status: 400,
-        headers: { ...cors, 'Content-Type': 'application/json' },
-      });
+    const body = (await req.json()) as {
+      systemPrompt?: string;
+      userContent?: string;
+      prompt?: string;
+    };
+
+    const userContent =
+      typeof body.userContent === 'string' && body.userContent.trim().length > 0
+        ? body.userContent
+        : typeof body.prompt === 'string'
+          ? body.prompt
+          : '';
+
+    if (!userContent) {
+      return new Response(
+        JSON.stringify({ error: 'userContent or prompt is required' }),
+        {
+          status: 400,
+          headers: { ...cors, 'Content-Type': 'application/json' },
+        },
+      );
     }
+
+    const system =
+      typeof body.systemPrompt === 'string' && body.systemPrompt.trim().length > 0
+        ? body.systemPrompt
+        : DEFAULT_SYSTEM;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+      system,
+      messages: [{ role: 'user', content: userContent }],
     });
 
     const text = message.content.find((b) => b.type === 'text')?.text ?? '';

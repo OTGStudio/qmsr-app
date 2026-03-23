@@ -35,8 +35,6 @@ describe('no-hallucination guards', () => {
       const s = { ...baselineClean(), swEnabled: false, aiEnabled: false };
       const text = allFocusText(s);
       expect(text).not.toMatch(/IEC 62304/i);
-      // Note: base bullets may reference "software" generically for software-enabled devices
-      // in the dd area postmarket framing. This test checks the overlay isn't injected.
     });
 
     it('pccpPlanned:false — no PCCP in any area', () => {
@@ -104,6 +102,7 @@ describe('no-hallucination guards', () => {
       productName: '',
       risk: '',
       signals: [],
+      unsupportedSignals: [],
       inspType: undefined,
       productCode: '',
       regulationNum: '',
@@ -124,9 +123,9 @@ describe('no-hallucination guards', () => {
       expect(prompt).toContain('Primary risk statement: (not provided)');
     });
 
-    it('empty signals shows "(none)"', () => {
+    it('empty canonical signals shows (none) in normalized line', () => {
       const prompt = buildNarrativePrompt(emptyScenario, null, []);
-      expect(prompt).toContain('Selected signals: (none)');
+      expect(prompt).toMatch(/Normalized canonical signals[^\n]*\(none\)/);
     });
 
     it('no inspType shows "(not selected)"', () => {

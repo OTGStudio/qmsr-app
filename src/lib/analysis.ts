@@ -1,10 +1,12 @@
 import { AREA_ORDER, ITYPES, QMS_AREAS, isPremarket } from '@/lib/domain';
+import { getSignalSeveritySummary, hasAnySignal, signalLabel } from '@/lib/signalRegistry';
 import type {
   AnalysisContext,
   FDAData,
   FDARecallRecord,
   FlagItem,
   FlagSeverity,
+  NarrativeStructuredPayload,
   OAIFactors,
   OAIContext,
   ReadinessContext,
@@ -278,6 +280,29 @@ function overlayBullets(areaKey: QMSAreaKey, context: AnalysisContext): string[]
       'Predetermined Change Control Plan (PCCP): expect documented predetermined changes, verification/validation strategy, and FDA interaction for applicable AI-DSF changes.',
     );
   }
+
+  const sigs = context.signals;
+  if (areaKey === 'meas') {
+    if (hasAnySignal(sigs, ['complaint_trend', 'mdr_increase', 'mdr_rising_3yr', 'death_type_mdr'])) {
+      out.push(
+        'Signals: scenario-selected complaint/MDR threads — expect complaint records, trending, and MDR decision-making evidence.',
+      );
+    }
+    if (hasAnySignal(sigs, ['recall_correction', 'class_i_recall', 'open_recall_action'])) {
+      out.push(
+        'Signals: recall/correction threads — expect corrections and removals records, distribution control, and CAPA linkage.',
+      );
+    }
+  }
+  if (areaKey === 'change' && hasAnySignal(sigs, ['supplier_change', 'recurring_capa'])) {
+    out.push('Signals: supplier or recurring CAPA stress — emphasize change evaluation and effectiveness verification.');
+  }
+  if (areaKey === 'dd' && hasAnySignal(sigs, ['software_anomaly', 'cybersecurity_signal', 'clinical_performance_drift'])) {
+    out.push(
+      'Signals: software/cyber/performance drift — tie design outputs, verification, and risk file updates to the stated signal.',
+    );
+  }
+
   if (areaKey === 'prod') {
     if (STERILE_RE.test(r)) {
       out.push('Sterile product: emphasize sterilization validation, bioburden controls, and packaging integrity.');
@@ -471,15 +496,21 @@ export function buildOAIFactors(context: OAIContext): OAIFactors {
   const highFlagCount = countFlagsBySeverity(flags, 'high');
 
   let systemic: OAIFactors['systemic'];
-  if (weakCount >= 2 || highFlagCount >= 2) {
+  if (highFlagCount >= 2 || weakCount >= 3 || (highFlagCount >= 1 && weakCount >= 2)) {
     systemic = {
       level: 'high',
-      reason: `${weakCount} QMS area(s) rated needs work and/or ${highFlagCount} high-severity FDA signal flag(s).`,
+      reason: `${weakCount} QMS area(s) rated needs work and/or ${highFlagCount} high-severity FDA signal flag(s) (self-ratings are contextual, not evidence).`,
     };
-  } else if (weakCount === 1 || highFlagCount === 1) {
+  } else if (weakCount >= 2 || highFlagCount === 1) {
     systemic = {
       level: 'medium',
-      reason: 'At least one weak self-rating or one high-severity signal flag increases systemic vulnerability.',
+      reason:
+        'Weak self-ratings and/or triangulation flags suggest focus areas; confirm with objective records rather than self-assessment alone.',
+    };
+  } else if (weakCount === 1) {
+    systemic = {
+      level: 'low',
+      reason: 'Single weak self-rating — secondary indicator pending corroboration.',
     };
   } else {
     systemic = { level: 'low', reason: 'Limited weak ratings and no high-severity triangulation flags.' };
@@ -539,48 +570,89 @@ export function buildOAIFactors(context: OAIContext): OAIFactors {
 }
 
 export function getOverallReadiness(context: ReadinessContext): ReadinessSummary {
-  const { inspType, ratings, flags } = context;
+  const { inspType, ratings, flags, signalKeys = [] } = context;
   const isM2 = ITYPES[inspType].model === 2;
   const weak = countRating(ratings, 'weak');
   const unknown = countRating(ratings, 'unknown');
   const partial = countRating(ratings, 'partial');
   const highFlags = countFlagsBySeverity(flags, 'high');
   const mediumFlags = countFlagsBySeverity(flags, 'medium');
+  const ss = getSignalSeveritySummary(signalKeys);
+
+  if (highFlags >= 1) {
+    return {
+      label: 'High inspection vulnerability',
+      tone: 'warn',
+      note: 'High-severity FDA triangulation flags drive the posture; self-ratings are secondary context only.',
+    };
+  }
+
+  if (ss.level === 'high') {
+    return {
+      label: 'High inspection vulnerability',
+      tone: 'warn',
+      note: 'Selected scenario signals indicate high postmarket or safety stress — confirm with records and FDA data.',
+    };
+  }
+
+  if (mediumFlags >= 2 || (mediumFlags >= 1 && ss.level === 'medium')) {
+    return {
+      label: 'Moderate apparent vulnerability',
+      tone: 'partial',
+      note: 'Medium-severity FDA flags and/or scenario signals increase likely investigator focus.',
+    };
+  }
+
+  if (ss.level === 'medium') {
+    return {
+      label: 'Moderate apparent vulnerability',
+      tone: 'partial',
+      note: 'Scenario signals elevate threads; self-assessment refines emphasis but does not replace evidence.',
+    };
+  }
 
   if (isM2) {
-    if (weak >= 1 || highFlags >= 1) {
+    if (weak >= 2) {
       return {
-        label: 'High inspection vulnerability',
-        tone: 'warn',
-        note: 'Model 2 scope with weak self-rating(s) or high-severity FDA flags increases exposure.',
+        label: 'Moderate apparent vulnerability',
+        tone: 'partial',
+        note: 'Self-assessment flags multiple weak areas under Model 2 breadth — confirm with objective records.',
+      };
+    }
+    if (weak === 1) {
+      return {
+        label: 'Moderate apparent vulnerability',
+        tone: 'partial',
+        note: 'Self-assessment flags at least one weak area; triangulation and records remain primary.',
       };
     }
     if (unknown >= 1 || partial >= 1) {
       return {
         label: 'Moderate apparent vulnerability',
         tone: 'partial',
-        note: 'Unknown or partial self-ratings leave gaps under full six-area coverage.',
+        note: 'Incomplete or partial self-assessment overlay — deterministic inputs still drive the framework.',
       };
     }
     return {
       label: 'Lower apparent vulnerability',
       tone: 'good',
-      note: 'Strong self-ratings across areas with no high-severity triangulation flags.',
+      note: 'No high-severity FDA flags; scenario signals comparatively contained for the selected profile.',
     };
   }
 
   if (unknown >= 3) {
     return {
-      label: 'Insufficient self-rating coverage',
+      label: 'Moderate apparent vulnerability',
       tone: 'partial',
-      note: 'Three or more areas are not rated — readiness assessment is incomplete.',
+      note:
+        'Several QMS areas are not self-rated — overall posture is driven primarily by inspection type, risk, and signals rather than self-assessment.',
     };
   }
-  if (weak >= 2 || highFlags >= 2) {
+  if (weak >= 2) {
     return {
-      label: 'High inspection vulnerability',
-      tone: 'warn',
-      note: 'Multiple weak areas and/or multiple high-severity FDA flags.',
+      label: 'Moderate apparent vulnerability',
+      tone: 'partial',
+      note: 'Multiple weak self-assessment areas suggest focus; triangulation flags take precedence when present.',
     };
   }
   if (weak >= 1 || partial >= 2 || mediumFlags >= 1) {
@@ -593,7 +665,7 @@ export function getOverallReadiness(context: ReadinessContext): ReadinessSummary
   return {
     label: 'Lower apparent vulnerability',
     tone: 'good',
-    note: 'Ratings and signals suggest comparatively lower apparent vulnerability under Model 1 navigation.',
+    note: 'Deterministic inputs and triangulation suggest comparatively lower apparent vulnerability under Model 1 navigation.',
   };
 }
 
@@ -715,72 +787,156 @@ export function triangulate(
   return flags;
 }
 
+export const NARRATIVE_SYSTEM_PROMPT = [
+  'You are a regulatory writing assistant for FDA QMSR (CP 7382.850) inspection readiness.',
+  'You MUST treat the user message as the only source of facts about the firm, device, signals, and FDA data.',
+  'FORBIDDEN: inventing recalls, MDR counts, prior inspections, CAPAs, design failures, software defects, supplier failures, or any fact not explicitly present in the user message.',
+  'FORBIDDEN: asserting that a signal exists unless it appears under normalized scenario signals or FDA/triangulation sections.',
+  'FORBIDDEN: escalating risk beyond what the provided evidence supports.',
+  'REQUIRED: separate factual restatement of provided inputs from interpretive inspection-readiness commentary.',
+  'REQUIRED: use conditional language when evidence is incomplete (e.g., “if the scenario is accurate…”, “the selected signals suggest…”).',
+  'REQUIRED: QMSR terminology only — do not use QSIT-era “subsystems” framing.',
+  'Write 400–600 words in professional tone for a medical device quality leader.',
+].join('\n');
+
+export function buildNarrativeStructuredPayload(
+  scenario: Scenario,
+  fdaData: FDAData | null,
+  flags: FlagItem[],
+): NarrativeStructuredPayload {
+  const itype = scenario.inspType ?? 'baseline';
+  const readinessSummary = getOverallReadiness({
+    inspType: itype,
+    ratings: scenario.ratings,
+    flags,
+    signalKeys: scenario.signals,
+    marketedUS: scenario.marketedUS,
+    risk: scenario.risk,
+  });
+  const thread = buildRiskThread(scenarioToAnalysisContext(scenario));
+  const normalizedSignals = scenario.signals.map((key) => ({
+    key,
+    label: signalLabel(key),
+  }));
+
+  return {
+    version: 1,
+    scenarioSummary: {
+      name: scenario.name,
+      companyName: scenario.companyName,
+      productName: scenario.productName,
+      inspType: scenario.inspType,
+      inspTypeLabel: scenario.inspType != null ? ITYPES[scenario.inspType].label : null,
+      marketedUS: scenario.marketedUS,
+      pathway: scenario.pathway,
+      manualClass: scenario.manualClass,
+      deviceClass: scenario.deviceClass,
+      productCode: scenario.productCode,
+      regulationNum: scenario.regulationNum,
+      risk: scenario.risk,
+      technology: {
+        aiEnabled: scenario.aiEnabled,
+        swEnabled: scenario.swEnabled,
+        cyberEnabled: scenario.cyberEnabled,
+        pccpPlanned: scenario.pccpPlanned,
+      },
+    },
+    normalizedSignals,
+    unsupportedSignalNotes: [...scenario.unsupportedSignals],
+    fdaSummary: {
+      hasData: fdaData != null,
+      error: fdaData?.error ?? null,
+      gudidUrl: fdaData?.gudidUrl ?? null,
+      mdrByYear: fdaData?.mdr ?? {},
+      mdrTypes: fdaData?.mdrTypes ?? {},
+      recallCount: fdaData?.recalls.length ?? 0,
+      recallSample: (fdaData?.recalls ?? [])
+        .slice(0, 5)
+        .map((r) => r.recallNumber ?? r.classification ?? 'recall'),
+    },
+    triangulationFlags: flags.map((f) => ({
+      severity: f.severity,
+      area: f.area,
+      label: f.label,
+      detail: f.detail,
+    })),
+    readinessSummary,
+    riskThreadPreview: {
+      entry: thread.entry,
+      sequence: thread.sequence,
+    },
+  };
+}
+
+export function buildNarrativeUserMessage(payload: NarrativeStructuredPayload): string {
+  const s = payload.scenarioSummary;
+  const sigLine = payload.normalizedSignals.length
+    ? payload.normalizedSignals.map((x) => `${x.label} (${x.key})`).join('; ')
+    : '(none)';
+  const unsupported =
+    payload.unsupportedSignalNotes.length > 0
+      ? payload.unsupportedSignalNotes.join('; ')
+      : '(none)';
+
+  const lines: string[] = [
+    '## Provided inputs (do not invent beyond this section)',
+    `Scenario name: ${s.name}`,
+    `Company: ${s.companyName || '(not provided)'}`,
+    `Product/device: ${s.productName || '(not provided)'}`,
+    `Inspection type: ${
+      s.inspType != null ? `${s.inspType} (${s.inspTypeLabel ?? ''})` : '(not selected)'
+    }`,
+    `Marketed in US: ${s.marketedUS ? 'yes' : 'no'}`,
+    `Pathway: ${s.pathway}; class: ${s.manualClass}${s.deviceClass ? `; device class note: ${s.deviceClass}` : ''}`,
+    `Product code: ${s.productCode || '(not provided)'}; Regulation: ${s.regulationNum || '(not provided)'}`,
+    '',
+    '## Risk and normalized signals',
+    `Primary risk statement: ${s.risk || '(not provided)'}`,
+    `Normalized canonical signals (engine-driving): ${sigLine}`,
+    `Context-only notes (not deterministic drivers): ${unsupported}`,
+    `Technology profile — AI: ${s.technology.aiEnabled}, Software: ${s.technology.swEnabled}, Cyber (524B): ${s.technology.cyberEnabled}, PCCP planned: ${s.technology.pccpPlanned}`,
+    '',
+    '## FDA public data summary (may be empty)',
+    payload.fdaSummary.hasData
+      ? [
+          payload.fdaSummary.error ? `Last error: ${payload.fdaSummary.error}` : 'No pull error recorded.',
+          `GUDID link: ${payload.fdaSummary.gudidUrl ?? '(none)'}`,
+          `MDR by year: ${JSON.stringify(payload.fdaSummary.mdrByYear)}`,
+          `MDR type buckets: ${JSON.stringify(payload.fdaSummary.mdrTypes)}`,
+          `Recalls (${payload.fdaSummary.recallCount}): ${payload.fdaSummary.recallSample.join(', ')}`,
+        ].join('\n')
+      : 'No FDA data object provided.',
+    '',
+    '## Triangulation flags',
+    payload.triangulationFlags.length === 0
+      ? '(none)'
+      : payload.triangulationFlags
+          .map((f) => `- [${f.severity.toUpperCase()}] ${f.area}: ${f.label} — ${f.detail}`)
+          .join('\n'),
+    '',
+    '## Readiness summary (deterministic helper)',
+    payload.readinessSummary
+      ? `${payload.readinessSummary.label} [${payload.readinessSummary.tone}] — ${payload.readinessSummary.note ?? ''}`
+      : '(none)',
+    '',
+    '## Risk thread preview',
+    `Entry area: ${payload.riskThreadPreview.entry}; sequence: ${payload.riskThreadPreview.sequence.join(' → ')}`,
+    '',
+    '## Interpretation task',
+    'Produce inspection-readiness narrative under QMSR CP 7382.850.',
+    'Clearly label what is restated from provided inputs versus what is interpretive.',
+    'If premarket (PMA pre / premarket review with device not US-marketed), emphasize design validation and readiness; de-emphasize routine complaint/MDR storytelling unless supported by FDA data or signals.',
+    'Reference OAI-style thinking (systemic quality risk, patient impact, detectability) without QSIT subsystem language.',
+    'Close with balanced, non-alarmist tone suitable for executive review.',
+  ];
+
+  return lines.join('\n');
+}
+
 export function buildNarrativePrompt(
   scenario: Scenario,
   fdaData: FDAData | null,
   flags: FlagItem[],
 ): string {
-  const lines: string[] = [];
-
-  lines.push(
-    'CRITICAL: FDA replaced QSIT with QMSR effective February 2, 2026 under CP 7382.850.',
-    'QMSR has exactly SIX QMS areas: (1) Management Oversight, (2) Design & Development, (3) Production & Service Provision, (4) Change Control, (5) Outsourcing & Purchasing, (6) Measurement, Analysis & Improvement.',
-    'DO NOT use QSIT terminology. Do NOT reference seven subsystems.',
-    'Write 400–600 words in professional regulatory tone for a medical device quality leader preparing for FDA inspection.',
-    '',
-    '## Scenario',
-    `Scenario name: ${scenario.name}`,
-    `Company: ${scenario.companyName || '(not provided)'}`,
-    `Product/device: ${scenario.productName || '(not provided)'}`,
-    `Inspection type: ${
-      scenario.inspType != null
-        ? `${scenario.inspType} (${ITYPES[scenario.inspType].label})`
-        : '(not selected)'
-    }`,
-    `Marketed in US: ${scenario.marketedUS ? 'yes' : 'no'}`,
-    `Pathway: ${scenario.pathway}; class: ${scenario.manualClass}${scenario.deviceClass ? `; device class note: ${scenario.deviceClass}` : ''}`,
-    `Product code: ${scenario.productCode || '(not provided)'}; Regulation: ${scenario.regulationNum || '(not provided)'}`,
-    '',
-    '## Risk and signals',
-    `Primary risk statement: ${scenario.risk || '(not provided)'}`,
-    `Selected signals: ${scenario.signals.length ? scenario.signals.join('; ') : '(none)'}`,
-    `Technology profile — AI: ${scenario.aiEnabled}, Software: ${scenario.swEnabled}, Cyber (524B): ${scenario.cyberEnabled}, PCCP planned: ${scenario.pccpPlanned}`,
-    '',
-    '## FDA public data summary',
-  );
-
-  if (!fdaData) {
-    lines.push('No FDA data object provided.');
-  } else {
-    lines.push(
-      fdaData.error ? `Last error: ${fdaData.error}` : 'No pull error recorded.',
-      `GUDID link: ${fdaData.gudidUrl ?? '(none)'}`,
-      `MDR by year: ${JSON.stringify(fdaData.mdr)}`,
-      `MDR type buckets: ${JSON.stringify(fdaData.mdrTypes)}`,
-      `Recalls (${fdaData.recalls.length}): ${fdaData.recalls
-        .slice(0, 5)
-        .map((r) => r.recallNumber ?? r.classification ?? 'recall')
-        .join(', ')}${fdaData.recalls.length > 5 ? '…' : ''}`,
-    );
-  }
-
-  lines.push('', '## Triangulation flags');
-  if (flags.length === 0) {
-    lines.push('(none)');
-  } else {
-    for (const f of flags) {
-      lines.push(`- [${f.severity.toUpperCase()}] ${f.area}: ${f.label} — ${f.detail}`);
-    }
-  }
-
-  lines.push(
-    '',
-    '## Instructions for the narrative',
-    'Synthesize inspection readiness themes under QMSR CP 7382.850: tie risk statement and signals to likely investigator focus.',
-    'If premarket (PMA pre / premarket review with device not US-marketed), emphasize design validation and readiness; de-emphasize routine complaint/MDR storytelling.',
-    'Reference OAI-style thinking (systemic quality risk, patient impact, detectability) without using QSIT subsystem language.',
-    'Close with a balanced, non-alarmist tone suitable for executive review.',
-  );
-
-  return lines.join('\n');
+  return buildNarrativeUserMessage(buildNarrativeStructuredPayload(scenario, fdaData, flags));
 }

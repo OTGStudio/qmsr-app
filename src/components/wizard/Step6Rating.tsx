@@ -50,23 +50,23 @@ export function Step6Rating({ scenario, onUpdate, fieldIdPrefix = '' }: WizardSt
             'tracking-wide',
           )}
         >
-          Step 6 of 7 — QMS Self-Assessment
+          Step 6 of 7 — Optional QMS self-assessment
         </p>
         <h2 className="font-serif text-2xl font-normal leading-snug text-brand-text">
-          Rate your readiness in each area
+          Optional confidence overlay (not objective evidence)
         </h2>
         <p className="text-sm leading-relaxed text-brand-muted">
           {isM2 ? (
             <>
-              Model 2 inspection types require FDA to cover all six QMS areas at minimum depth.
-              Your self-rating highlights where evidence and records may be stressed—be candid so
-              the assessment matches your true posture.
+              Model 2 still requires minimum depth across all six areas — this step is a
+              secondary self-assessment of where records may feel thin. It does not replace
+              signals, risk text, or FDA triangulation.
             </>
           ) : (
             <>
-              Honest ratings produce the most useful readiness picture. Use “Not rated” when you
-              have not yet assessed an area; partial or weak ratings help the tool emphasize
-              likely investigator focus.
+              Honest ratings can modestly tune emphasis, but they are not a substitute for
+              structured signals, risk evidence, or records. Use “Not rated” freely when you
+              have not assessed an area.
             </>
           )}
         </p>
@@ -168,7 +168,8 @@ export function Step6Rating({ scenario, onUpdate, fieldIdPrefix = '' }: WizardSt
           <span className="font-medium text-brand-text">
             {ratedCount} of 6 areas rated.
           </span>{' '}
-          Ratings are optional but improve the OAI assessment.
+          Self-ratings are a secondary modifier — OAI and readiness prioritize inspection type,
+          signals, and FDA data first.
         </p>
       </CardContent>
     </Card>

@@ -93,6 +93,9 @@ export function ScenarioDetail() {
       inspType: itype,
       ratings: scenario.ratings,
       flags,
+      signalKeys: scenario.signals,
+      marketedUS: scenario.marketedUS,
+      risk: scenario.risk,
     };
     const overallReadiness = getOverallReadiness(readinessContext);
 

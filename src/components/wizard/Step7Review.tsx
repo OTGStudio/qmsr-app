@@ -8,14 +8,13 @@ import {
   ITYPES,
   QMS_AREAS,
   RLABELS,
-  SIGNALS,
   isPremarket,
 } from '@/lib/domain';
+import { summarizeFeiVerificationForUi } from '@/lib/feiVerification';
+import { signalLabel } from '@/lib/signalRegistry';
 import { cn } from '@/lib/utils';
-import { validateScenario } from '@/lib/validation';
+import { validateFEI, validateScenario } from '@/lib/validation';
 import type { QMSAreaKey, RatingValue, Scenario, WizardLayoutMode } from '@/types/scenario';
-
-const CANONICAL_SIGNAL_SET = new Set(SIGNALS);
 
 const RATING_STYLES: Record<RatingValue, string> = {
   unknown: 'border border-brand-border bg-brand-card text-brand-muted',
@@ -100,7 +99,10 @@ export function Step7Review({
       : 'Standard — 510(k) / PMA / HDE';
 
   const signalCount = scenario.signals.length;
+  const unsupportedCount = scenario.unsupportedSignals.length;
   const tech = technologyLabels(scenario);
+  const feiFormatInvalid =
+    scenario.feiNumber.trim().length > 0 && validateFEI(scenario.feiNumber) !== null;
 
   return (
     <div className="space-y-4">
@@ -131,9 +133,28 @@ export function Step7Review({
           )}
           role="status"
         >
-          <ul className="list-inside list-disc space-y-0.5">
+          <p className="font-semibold">Warnings (non-blocking)</p>
+          <ul className="mt-1 list-inside list-disc space-y-0.5">
             {validation.warnings.map((w) => (
               <li key={w.code}>{w.message}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {validation.notices.length > 0 ? (
+        <div
+          data-testid="launch-notices"
+          className={cn(
+            'rounded-lg border border-brand-border bg-brand-card-alt px-4 py-3',
+            'text-sm text-brand-muted',
+          )}
+          role="status"
+        >
+          <p className="font-semibold text-brand-text">Notices</p>
+          <ul className="mt-1 list-inside list-disc space-y-0.5">
+            {validation.notices.map((n) => (
+              <li key={n.code}>{n.message}</li>
             ))}
           </ul>
         </div>
@@ -188,6 +209,16 @@ export function Step7Review({
           <ReviewRow label="Company" value={scenario.companyName} />
           <ReviewRow label="Product" value={scenario.productName} />
           <ReviewRow label="FEI number" value={scenario.feiNumber} />
+          {scenario.feiNumber.trim().length > 0 ? (
+            <ReviewRow
+              label="Establishment verification"
+              value={summarizeFeiVerificationForUi(
+                scenario.feiNumber,
+                scenario.feiVerification,
+                feiFormatInvalid,
+              )}
+            />
+          ) : null}
         </CardContent>
       </Card>
 
@@ -267,37 +298,47 @@ export function Step7Review({
         </CardHeader>
         <CardContent className="pt-0">
           <p className="mb-2 text-sm text-brand-muted">
-            {signalCount} signal{signalCount === 1 ? '' : 's'} selected
+            {signalCount} canonical signal{signalCount === 1 ? '' : 's'}; {unsupportedCount} context
+            note{unsupportedCount === 1 ? '' : 's'}
           </p>
           {scenario.signals.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {scenario.signals.map((s) => {
-                const on = CANONICAL_SIGNAL_SET.has(s);
-                return (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {scenario.signals.map((k) => (
+                <span
+                  key={k}
+                  className={cn(
+                    'rounded-full border border-brand-accent bg-brand-accent-bg px-2.5 py-1 text-xs font-medium text-brand-text',
+                  )}
+                >
+                  {signalLabel(k)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mb-3 text-sm italic text-brand-muted">No canonical signals selected</p>
+          )}
+          {scenario.unsupportedSignals.length > 0 ? (
+            <div>
+              <p className="mb-1 text-xs font-semibold text-brand-muted">Context-only (not engine-driving)</p>
+              <div className="flex flex-wrap gap-2">
+                {scenario.unsupportedSignals.map((s) => (
                   <span
                     key={s}
-                    className={cn(
-                      'rounded-full border px-2.5 py-1 text-xs font-medium',
-                      on
-                        ? 'border-brand-accent bg-brand-accent-bg text-brand-text'
-                        : 'border-brand-border bg-brand-accent-bg/50 text-brand-text',
-                    )}
+                    className="rounded-full border border-brand-border bg-brand-card-alt px-2.5 py-1 text-xs text-brand-muted"
                   >
                     {s}
                   </span>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          ) : (
-            <p className="text-sm italic text-brand-muted">None selected</p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
       <Card className="border-brand-border bg-brand-card">
         <CardHeader className="pb-2">
           <h3 className="font-serif text-lg font-medium text-brand-text">
-            QMS Self-Assessment
+            Optional QMS self-assessment
           </h3>
         </CardHeader>
         <CardContent className="space-y-3 pt-0">
@@ -334,7 +375,7 @@ export function Step7Review({
               <p className="mt-1.5">
                 {weakAreas.join(', ')}
                 {isM2 && weakAreas.length > 0
-                  ? ' — critical in Model 2: these areas have no compensating coverage'
+                  ? ' — self-rated weak areas under Model 2 breadth; confirm with records and signals.'
                   : ''}
               </p>
             </div>

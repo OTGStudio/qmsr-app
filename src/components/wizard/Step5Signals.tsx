@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { SIGNALS } from '@/lib/domain';
+import { SIGNAL_KEYS_ORDER, normalizeSignal, signalLabel } from '@/lib/signalRegistry';
 import { wizardPillToggleClass } from '@/lib/wizardToggleStyles';
 import { cn } from '@/lib/utils';
 import type { WizardStepProps } from '@/types/scenario';
@@ -14,23 +14,16 @@ const inputClassName = cn(
   'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
 );
 
-const CANONICAL_SIGNAL_SET = new Set(SIGNALS);
-
 export function Step5Signals({ scenario, onUpdate, fieldIdPrefix = '' }: WizardStepProps) {
   const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
   const [customInput, setCustomInput] = useState('');
 
-  const customSignals = useMemo(
-    () => scenario.signals.filter((s) => !CANONICAL_SIGNAL_SET.has(s)),
-    [scenario.signals],
-  );
-
   const toggleSignal = useCallback(
-    (signal: string) => {
-      const has = scenario.signals.includes(signal);
+    (key: (typeof SIGNAL_KEYS_ORDER)[number]) => {
+      const has = scenario.signals.includes(key);
       const next = has
-        ? scenario.signals.filter((s) => s !== signal)
-        : [...scenario.signals, signal];
+        ? scenario.signals.filter((s) => s !== key)
+        : [...scenario.signals, key];
       onUpdate({ signals: next });
     },
     [onUpdate, scenario.signals],
@@ -39,27 +32,44 @@ export function Step5Signals({ scenario, onUpdate, fieldIdPrefix = '' }: WizardS
   const addCustom = useCallback(() => {
     const trimmed = customInput.trim();
     if (!trimmed) return;
-    const exists = scenario.signals.some(
-      (s) => s.toLowerCase() === trimmed.toLowerCase(),
-    );
-    if (exists) {
+    const n = normalizeSignal(trimmed);
+    if (n.matched && n.key) {
+      const exists = scenario.signals.includes(n.key);
+      if (!exists) {
+        onUpdate({ signals: [...scenario.signals, n.key] });
+      }
       setCustomInput('');
       return;
     }
-    onUpdate({ signals: [...scenario.signals, trimmed] });
+    const dup = scenario.unsupportedSignals.some(
+      (s) => s.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (dup) {
+      setCustomInput('');
+      return;
+    }
+    onUpdate({ unsupportedSignals: [...scenario.unsupportedSignals, trimmed] });
     setCustomInput('');
-  }, [customInput, onUpdate, scenario.signals]);
+  }, [customInput, onUpdate, scenario.signals, scenario.unsupportedSignals]);
 
-  const removeSignal = useCallback(
-    (signal: string) => {
+  const removeUnsupported = useCallback(
+    (note: string) => {
       onUpdate({
-        signals: scenario.signals.filter((s) => s !== signal),
+        unsupportedSignals: scenario.unsupportedSignals.filter((s) => s !== note),
       });
     },
-    [onUpdate, scenario.signals],
+    [onUpdate, scenario.unsupportedSignals],
   );
 
-  const count = scenario.signals.length;
+  const engineCount = scenario.signals.length;
+  const contextCount = scenario.unsupportedSignals.length;
+
+  const statusLine = useMemo(() => {
+    if (engineCount === 0 && contextCount === 0) {
+      return 'No canonical signals selected. Context notes are optional.';
+    }
+    return `${engineCount} canonical signal${engineCount === 1 ? '' : 's'} drive analysis; ${contextCount} context note${contextCount === 1 ? '' : 's'} (reviewer only).`;
+  }, [engineCount, contextCount]);
 
   return (
     <Card className="border-brand-border bg-brand-card">
@@ -76,57 +86,61 @@ export function Step5Signals({ scenario, onUpdate, fieldIdPrefix = '' }: WizardS
           Which signals are present?
         </h2>
         <p className="text-sm leading-relaxed text-brand-muted">
-          Signals are the pre-inspection clues FDA may already be tracking—complaints, MDRs,
-          recalls, supplier issues, and similar threads. Selecting them shapes how strongly the
-          framework emphasizes measurement, CAPA, and design linkage.
+          Canonical signals below feed the deterministic engine. Custom text is saved as
+          reviewer-only context if it cannot be matched to a known signal — it does not silently
+          change core analysis.
         </p>
       </CardHeader>
       <CardContent className="space-y-6 pt-2">
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-          {SIGNALS.map((signal) => {
-            const on = scenario.signals.includes(signal);
+          {SIGNAL_KEYS_ORDER.map((key) => {
+            const label = signalLabel(key);
+            const on = scenario.signals.includes(key);
             return (
               <button
-                key={signal}
+                key={key}
                 type="button"
                 onClick={() => {
-                  toggleSignal(signal);
+                  toggleSignal(key);
                 }}
                 aria-pressed={on}
                 className={wizardPillToggleClass(on, 'comfortable')}
               >
-                {signal}
+                {label}
               </button>
             );
           })}
         </div>
 
-        {customSignals.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {customSignals.map((signal) => (
-              <span
-                key={signal}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full border border-brand-accent',
-                  'bg-brand-accent-bg px-2.5 py-1 text-sm font-medium text-brand-text',
-                )}
-              >
-                {signal}
-                <button
-                  type="button"
-                  onClick={() => {
-                    removeSignal(signal);
-                  }}
+        {scenario.unsupportedSignals.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-brand-muted">Context-only notes (not engine-driving)</p>
+            <div className="flex flex-wrap gap-2">
+              {scenario.unsupportedSignals.map((note) => (
+                <span
+                  key={note}
                   className={cn(
-                    'ml-0.5 inline-flex size-6 items-center justify-center rounded-full',
-                    'text-brand-accent hover:bg-brand-accent/10',
+                    'inline-flex items-center gap-1 rounded-full border border-brand-border',
+                    'bg-brand-card-alt px-2.5 py-1 text-sm font-medium text-brand-muted',
                   )}
-                  aria-label={`Remove ${signal}`}
                 >
-                  ×
-                </button>
-              </span>
-            ))}
+                  {note}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeUnsupported(note);
+                    }}
+                    className={cn(
+                      'ml-0.5 inline-flex size-6 items-center justify-center rounded-full',
+                      'text-brand-muted hover:bg-brand-border/30',
+                    )}
+                    aria-label={`Remove ${note}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         ) : null}
 
@@ -144,9 +158,9 @@ export function Step5Signals({ scenario, onUpdate, fieldIdPrefix = '' }: WizardS
                 addCustom();
               }
             }}
-            placeholder="Add a custom signal…"
+            placeholder="Match an alias or add a context-only note…"
             className={cn(inputClassName, 'sm:min-w-0 sm:flex-1')}
-            aria-label="Custom signal"
+            aria-label="Custom signal or note"
           />
           <Button
             type="button"
@@ -159,6 +173,10 @@ export function Step5Signals({ scenario, onUpdate, fieldIdPrefix = '' }: WizardS
             Add
           </Button>
         </div>
+        <p className="text-xs text-brand-muted">
+          Recognized aliases map to canonical signals. Unrecognized text is stored as context for
+          reviewers and excluded from deterministic engine inputs.
+        </p>
 
         <div
           className={cn(
@@ -167,20 +185,9 @@ export function Step5Signals({ scenario, onUpdate, fieldIdPrefix = '' }: WizardS
           )}
           role="status"
         >
-          {count === 0 ? (
-            <p className="text-brand-muted">
-              No signals is valid for a first inspection or a neutral baseline when you do not yet
-              have postmarket threads to highlight.
-            </p>
-          ) : (
-            <p className="text-brand-muted">
-              <span className="font-semibold text-brand-text">
-                {count} signal{count === 1 ? '' : 's'} selected.
-              </span>{' '}
-              These are reflected in the OAI risk assessment and help weight how the framework
-              stresses measurement, CAPA, and design linkage.
-            </p>
-          )}
+          <p className="text-brand-muted">
+            <span className="font-semibold text-brand-text">{statusLine}</span>
+          </p>
         </div>
       </CardContent>
     </Card>

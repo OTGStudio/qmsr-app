@@ -9,6 +9,7 @@ import {
 } from '@/lib/analysis';
 import { isPremarket } from '@/lib/domain';
 import type { AnalysisContext, FDAData, OAIContext, ReadinessContext } from '@/types/analysis';
+import type { SignalKey } from '@/lib/signalRegistry';
 import { DEFAULT_RATINGS } from '@/types/scenario';
 
 const emptyAreaNotes = {
@@ -27,7 +28,7 @@ function baseAnalysisContext(overrides: Partial<AnalysisContext> = {}): Analysis
     ratings: { ...DEFAULT_RATINGS },
     areaNotes: { ...emptyAreaNotes },
     risk: '',
-    signals: [],
+    signals: [] as SignalKey[],
     aiEnabled: false,
     swEnabled: false,
     cyberEnabled: false,
@@ -141,7 +142,7 @@ describe('buildOAIFactors', () => {
     ...overrides,
   });
 
-  it('2 weak areas → systemic high', () => {
+  it('2 weak areas → systemic medium (ratings are secondary to triangulation)', () => {
     const o = buildOAIFactors(
       baseOai({
         ratings: {
@@ -154,7 +155,7 @@ describe('buildOAIFactors', () => {
         },
       }),
     );
-    expect(o.systemic.level).toBe('high');
+    expect(o.systemic.level).toBe('medium');
   });
 
   it('0 weak areas → systemic low', () => {
@@ -207,7 +208,7 @@ describe('buildOAIFactors', () => {
         ratings: {
           mgmt: 'weak',
           dd: 'weak',
-          prod: 'strong',
+          prod: 'weak',
           change: 'strong',
           out: 'strong',
           meas: 'strong',
@@ -229,7 +230,7 @@ describe('getOverallReadiness', () => {
     ...overrides,
   });
 
-  it("isM2=true, one weak area → 'High inspection vulnerability'", () => {
+  it("isM2=true, one weak area → moderate (self-ratings do not alone imply 'high')", () => {
     const r = getOverallReadiness(
       baseReadiness({
         inspType: 'baseline',
@@ -243,10 +244,10 @@ describe('getOverallReadiness', () => {
         },
       }),
     );
-    expect(r.label).toBe('High inspection vulnerability');
+    expect(r.label).toBe('Moderate apparent vulnerability');
   });
 
-  it("isM2=false, 2 strong + 4 unknown → 'Insufficient self-rating coverage'", () => {
+  it("isM2=false, 2 strong + 4 unknown → moderate (unknown ratings do not block deterministic posture)", () => {
     const r = getOverallReadiness(
       baseReadiness({
         inspType: 'spra',
@@ -260,7 +261,7 @@ describe('getOverallReadiness', () => {
         },
       }),
     );
-    expect(r.label).toBe('Insufficient self-rating coverage');
+    expect(r.label).toBe('Moderate apparent vulnerability');
   });
 
   it('All 6 strong, no high flags → Lower apparent vulnerability', () => {

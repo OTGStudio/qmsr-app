@@ -1,10 +1,13 @@
+import { normalizeSignals } from '@/lib/signalRegistry';
 import type { FDAData } from '@/types/analysis';
 import type { Database, Json } from '@/types/database';
-import type {
-  InspectionType,
-  QMSAreaKey,
-  Scenario,
-  ScenarioRatings,
+import type { FEIVerificationResult } from '@/types/facility';
+import {
+  DEFAULT_SCENARIO,
+  type InspectionType,
+  type QMSAreaKey,
+  type Scenario,
+  type ScenarioRatings,
 } from '@/types/scenario';
 
 export type ScenarioInsert = Database['public']['Tables']['scenarios']['Insert'];
@@ -40,6 +43,23 @@ function parseRatings(value: Json | null | undefined): ScenarioRatings {
   return base as ScenarioRatings;
 }
 
+function parseFeiVerificationJson(value: Json | null | undefined): FEIVerificationResult | null {
+  if (value === null || value === undefined) return null;
+  if (!isRecord(value)) return null;
+  if (typeof value.status !== 'string') return null;
+  return value as unknown as FEIVerificationResult;
+}
+
+function parseSignalsFromRow(
+  signalsCol: string[] | null | undefined,
+  unsupportedCol: string[] | null | undefined,
+): Pick<Scenario, 'signals' | 'unsupportedSignals'> {
+  const { canonical, rejected } = normalizeSignals(signalsCol ?? []);
+  const fromDb = unsupportedCol ?? [];
+  const mergedUnsupported = [...new Set([...rejected, ...fromDb])];
+  return { signals: canonical, unsupportedSignals: mergedUnsupported };
+}
+
 function parseAreaNotes(value: Json | null | undefined): Record<QMSAreaKey, string> {
   const empty: Record<QMSAreaKey, string> = {
     mgmt: '',
@@ -61,6 +81,22 @@ function parseAreaNotes(value: Json | null | undefined): Record<QMSAreaKey, stri
 /** Temporary storage key for wizard scenario when user must sign in before save. */
 export const PENDING_SCENARIO_STORAGE_KEY = 'qmsr_pending_scenario_v1' as const;
 
+/** Merge JSON-parsed wizard state with defaults and normalize legacy signal labels to keys. */
+export function mergePendingScenarioIntoDefault(raw: Partial<Scenario>): Scenario {
+  const base: Scenario = { ...DEFAULT_SCENARIO, ...raw };
+  const rawSignals = raw.signals ?? base.signals;
+  const { canonical, rejected } = normalizeSignals(rawSignals as unknown as string[]);
+  const unsupported = [...new Set([...(base.unsupportedSignals ?? []), ...rejected])];
+  const feiVerification =
+    raw.feiVerification !== undefined ? raw.feiVerification : base.feiVerification;
+  return {
+    ...base,
+    signals: canonical,
+    unsupportedSignals: unsupported,
+    feiVerification,
+  };
+}
+
 export function scenarioToDb(scenario: Scenario): ScenarioInsert {
   return {
     name: scenario.name,
@@ -68,6 +104,7 @@ export function scenarioToDb(scenario: Scenario): ScenarioInsert {
     product_name: scenario.productName,
     company_name: scenario.companyName,
     fei_number: scenario.feiNumber,
+    fei_verification: (scenario.feiVerification ?? null) as unknown as Json | null,
     insp_type: scenario.inspType ?? 'baseline',
     marketed_us: scenario.marketedUS,
     pathway: scenario.pathway,
@@ -78,6 +115,7 @@ export function scenarioToDb(scenario: Scenario): ScenarioInsert {
     regulation_num: scenario.regulationNum,
     risk: scenario.risk,
     signals: scenario.signals,
+    unsupported_signals: scenario.unsupportedSignals,
     ai_enabled: scenario.aiEnabled,
     sw_enabled: scenario.swEnabled,
     cyber_enabled: scenario.cyberEnabled,
@@ -101,6 +139,10 @@ export function mergeScenarioPatch(base: Scenario, patch: Partial<Scenario>): Sc
     ratings: patch.ratings ? { ...base.ratings, ...patch.ratings } : base.ratings,
     areaNotes: patch.areaNotes ? { ...base.areaNotes, ...patch.areaNotes } : base.areaNotes,
     signals: patch.signals !== undefined ? patch.signals : base.signals,
+    unsupportedSignals:
+      patch.unsupportedSignals !== undefined ? patch.unsupportedSignals : base.unsupportedSignals,
+    feiVerification:
+      patch.feiVerification !== undefined ? patch.feiVerification : base.feiVerification,
     fdaData: patch.fdaData !== undefined ? patch.fdaData : base.fdaData,
     fdaPulledAt: patch.fdaPulledAt !== undefined ? patch.fdaPulledAt : base.fdaPulledAt,
     inspectionNarrative:
@@ -118,6 +160,7 @@ export function dbToScenario(row: Tables<'scenarios'>): Scenario {
     productName: row.product_name ?? '',
     companyName: row.company_name ?? '',
     feiNumber: row.fei_number ?? '',
+    feiVerification: parseFeiVerificationJson(row.fei_verification),
     inspType: row.insp_type as InspectionType,
     marketedUS: row.marketed_us ?? true,
     pathway: (row.pathway === 'denovo' ? 'denovo' : 'standard') as Scenario['pathway'],
@@ -127,7 +170,7 @@ export function dbToScenario(row: Tables<'scenarios'>): Scenario {
     productCode: row.product_code ?? '',
     regulationNum: row.regulation_num ?? '',
     risk: row.risk ?? '',
-    signals: row.signals ?? [],
+    ...parseSignalsFromRow(row.signals, row.unsupported_signals),
     aiEnabled: row.ai_enabled ?? false,
     swEnabled: row.sw_enabled ?? false,
     cyberEnabled: row.cyber_enabled ?? false,

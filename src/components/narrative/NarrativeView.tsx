@@ -10,7 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { buildNarrativePrompt } from '@/lib/analysis';
+import {
+  buildNarrativeStructuredPayload,
+  buildNarrativeUserMessage,
+  NARRATIVE_SYSTEM_PROMPT,
+} from '@/lib/analysis';
 import { useNarrative } from '@/hooks/useNarrative';
 import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/lib/utils';
@@ -33,9 +37,13 @@ function NarrativeViewInner({
     (text) => onScenarioUpdate({ inspectionNarrative: text }),
   );
 
-  const narrativePrompt = useMemo(() => {
+  const narrativeRequest = useMemo(() => {
     if (!scenario.risk.trim()) return null;
-    return buildNarrativePrompt(scenario, fdaData, flags);
+    const payload = buildNarrativeStructuredPayload(scenario, fdaData, flags);
+    return {
+      systemPrompt: NARRATIVE_SYSTEM_PROMPT,
+      userContent: buildNarrativeUserMessage(payload),
+    };
   }, [scenario, fdaData, flags]);
 
   return (
@@ -122,9 +130,9 @@ function NarrativeViewInner({
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
-              disabled={loading || !narrativePrompt}
+              disabled={loading || !narrativeRequest}
               onClick={() => {
-                if (narrativePrompt) void generate(narrativePrompt);
+                if (narrativeRequest) void generate(narrativeRequest);
               }}
             >
               {loading ? (
@@ -170,9 +178,9 @@ function NarrativeViewInner({
               <Button
                 type="button"
                 variant="outline"
-                disabled={loading || !narrativePrompt}
+                disabled={loading || !narrativeRequest}
                 onClick={() => {
-                  if (narrativePrompt) void generate(narrativePrompt);
+                  if (narrativeRequest) void generate(narrativeRequest);
                 }}
               >
                 {loading ? (

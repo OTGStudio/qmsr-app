@@ -1,5 +1,14 @@
 # React + TypeScript + Vite
 
+## QMSR inspection engine (developer notes)
+
+- **Canonical signals:** `src/lib/signalRegistry.ts` is the single source of truth. Scenario `signals` stores `SignalKey` values; UI shows `signalLabel(key)`. Free-text that does not normalize stays in `unsupportedSignals` (reviewer context only; not used for deterministic analysis).
+- **Deterministic vs contextual:** Analysis, OAI, readiness, and narrative payloads use normalized canonical signals and structured scenario data. Unsupported notes are passed to the narrative only as labeled context, not as facts.
+- **Step 6:** Self-ratings are an optional overlay; they modulate emphasis but do not replace signals, risk text, or FDA triangulation.
+- **FEI:** `validateFEI()` enforces **format only** (empty allowed, or exactly 10 digits). **Establishment verification** is a separate evidence object on the scenario (`feiVerification` / DB `fei_verification` JSON): syntax validity is not treated as “FDA verified.” Launch does **not** block when lookup is unavailable or not run; after a **user-initiated** lookup, `not_found` / `verification_failed` can block. Providers live under `src/lib/feiProviders/`; openFDA is enrichment-only until an authoritative FEI source is wired. Set `VITE_FEI_MOCK=true` for deterministic mock verification in dev.
+
+---
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

@@ -1,4 +1,8 @@
 import type { FDAData } from './analysis';
+import type { SignalKey } from '@/lib/signalRegistry';
+import type { FEIVerificationResult } from '@/types/facility';
+
+export type { FEIVerificationResult } from '@/types/facility';
 
 export type QMSAreaKey = 'mgmt' | 'dd' | 'prod' | 'change' | 'out' | 'meas';
 
@@ -35,6 +39,8 @@ export interface Scenario {
   productName: string;
   companyName: string;
   feiNumber: string;
+  /** Last establishment verification attempt (evidence object); null if not attempted. */
+  feiVerification: FEIVerificationResult | null;
   // Inspection (optional until selected in wizard step 2)
   inspType?: InspectionType;
   marketedUS: boolean;
@@ -47,7 +53,10 @@ export interface Scenario {
   regulationNum: string;
   // Risk
   risk: string;
-  signals: string[];
+  /** Canonical registry keys only — drives deterministic analysis. */
+  signals: SignalKey[];
+  /** Free-text or unrecognized entries kept for reviewer context (not engine-driving). */
+  unsupportedSignals: string[];
   aiEnabled: boolean;
   swEnabled: boolean;
   cyberEnabled: boolean;
@@ -76,6 +85,7 @@ export const DEFAULT_SCENARIO = {
   productName: '',
   companyName: '',
   feiNumber: '',
+  feiVerification: null,
   marketedUS: true,
   pathway: 'standard',
   manualClass: '2',
@@ -85,6 +95,7 @@ export const DEFAULT_SCENARIO = {
   regulationNum: '',
   risk: '',
   signals: [],
+  unsupportedSignals: [],
   aiEnabled: false,
   swEnabled: false,
   cyberEnabled: false,

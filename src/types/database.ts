@@ -88,6 +88,7 @@ export type Database = {
           fda_data: Json | null
           fda_pulled_at: string | null
           fei_number: string | null
+          fei_verification: Json | null
           id: string
           inspection_narrative: string | null
           insp_type: string
@@ -105,6 +106,7 @@ export type Database = {
           risk: string | null
           signals: string[] | null
           sw_enabled: boolean | null
+          unsupported_signals: string[] | null
           updated_at: string | null
           user_id: string | null
         }
@@ -119,6 +121,7 @@ export type Database = {
           fda_data?: Json | null
           fda_pulled_at?: string | null
           fei_number?: string | null
+          fei_verification?: Json | null
           id?: string
           inspection_narrative?: string | null
           insp_type?: string
@@ -136,6 +139,7 @@ export type Database = {
           risk?: string | null
           signals?: string[] | null
           sw_enabled?: boolean | null
+          unsupported_signals?: string[] | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -150,6 +154,7 @@ export type Database = {
           fda_data?: Json | null
           fda_pulled_at?: string | null
           fei_number?: string | null
+          fei_verification?: Json | null
           id?: string
           inspection_narrative?: string | null
           insp_type?: string
@@ -167,6 +172,7 @@ export type Database = {
           risk?: string | null
           signals?: string[] | null
           sw_enabled?: boolean | null
+          unsupported_signals?: string[] | null
           updated_at?: string | null
           user_id?: string | null
         }

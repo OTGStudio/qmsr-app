@@ -13,7 +13,7 @@ const textareaClassName = cn(
 function applyPreset(preset: PresetDef): Partial<Scenario> {
   return {
     risk: preset.risk,
-    signals: preset.signals,
+    signals: [...new Set(preset.signals)],
     aiEnabled: preset.ai ?? false,
     swEnabled: Boolean(preset.sw || preset.ai),
     cyberEnabled: preset.cyber ?? false,

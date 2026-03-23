@@ -11,6 +11,7 @@ import {
   SIGNALS,
   isPremarket,
 } from '@/lib/domain';
+import { isSignalKey } from '@/lib/signalRegistry';
 import type { InspectionType, QMSAreaKey } from '@/types/scenario';
 
 describe('QMS_AREAS', () => {
@@ -146,6 +147,14 @@ describe('PRESETS', () => {
     expect(PRESETS.ai.ai).toBe(true);
     expect(PRESETS.ai.sw).toBe(true);
     expect(PRESETS.cyber.cyber).toBe(true);
+  });
+
+  it('maps every preset signal to a canonical registry key', () => {
+    for (const k of presetKeys) {
+      for (const sig of PRESETS[k].signals) {
+        expect(isSignalKey(sig)).toBe(true);
+      }
+    }
   });
 });
 

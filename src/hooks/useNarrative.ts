@@ -81,13 +81,18 @@ async function narrativeErrorMessage(error: unknown): Promise<string> {
   return error instanceof Error ? error.message : 'Narrative request failed.';
 }
 
+export interface NarrativeGenerateInput {
+  systemPrompt: string;
+  userContent: string;
+}
+
 export interface UseNarrativeResult {
   narrative: string;
   loading: boolean;
   error: string | null;
   usesThisSession: number;
   usesLeft: number;
-  generate: (prompt: string) => Promise<void>;
+  generate: (input: NarrativeGenerateInput) => Promise<void>;
 }
 
 /**
@@ -108,7 +113,7 @@ export function useNarrative(
   );
 
   const generate = useCallback(
-    async (prompt: string) => {
+    async (input: NarrativeGenerateInput) => {
       const currentUses = readUsesFromStorage();
       if (currentUses >= RATE_LIMIT) {
         setError('Session limit reached');
@@ -146,7 +151,10 @@ export function useNarrative(
         const { data, error: fnError } = await supabase.functions.invoke<{ text?: string; error?: string }>(
           'narrative',
           {
-            body: { prompt },
+            body: {
+              systemPrompt: input.systemPrompt,
+              userContent: input.userContent,
+            },
             headers: {
               Authorization: `Bearer ${activeSession.access_token}`,
             },

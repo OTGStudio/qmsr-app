@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { verifyFeiEstablishment } from '@/lib/api/verifyFei';
+import { summarizeFeiVerificationForUi } from '@/lib/feiVerification';
 import { cn } from '@/lib/utils';
 import { validateFEI } from '@/lib/validation';
 import type { WizardStepProps } from '@/types/scenario';
@@ -23,6 +27,15 @@ export function Step1Facility({
 }: WizardStepProps) {
   const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
   const [feiError, setFeiError] = useState<string | null>(null);
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+
+  const formatInvalid = scenario.feiNumber.trim().length > 0 && validateFEI(scenario.feiNumber) !== null;
+  const summaryLine = summarizeFeiVerificationForUi(
+    scenario.feiNumber,
+    scenario.feiVerification,
+    formatInvalid,
+  );
 
   return (
     <Card className="border-brand-border bg-brand-card">
@@ -81,7 +94,7 @@ export function Step1Facility({
           </div>
         </div>
 
-        <div className="max-w-[220px]">
+        <div className="max-w-md">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
             <label className={fieldLabelClass} htmlFor={fid('wizard-fei-number')}>
               FEI number
@@ -96,14 +109,15 @@ export function Step1Facility({
             autoComplete="off"
             value={scenario.feiNumber}
             onChange={(e) => {
-              onUpdate({ feiNumber: e.target.value });
+              onUpdate({ feiNumber: e.target.value, feiVerification: null });
+              setVerifyError(null);
               if (feiError) {
                 const err = validateFEI(e.target.value);
                 setFeiError(err?.message ?? null);
               }
             }}
-            onBlur={() => {
-              const err = validateFEI(scenario.feiNumber);
+            onBlur={(e) => {
+              const err = validateFEI(e.target.value);
               setFeiError(err?.message ?? null);
             }}
             aria-invalid={feiError != null}
@@ -123,6 +137,79 @@ export function Step1Facility({
             >
               {feiError}
             </p>
+          ) : null}
+
+          {scenario.feiNumber.trim().length > 0 && !feiError ? (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs font-semibold text-brand-text">FEI establishment check</p>
+              <p className="text-xs leading-relaxed text-brand-muted">
+                FEI format valid means the value matches the syntax rule — it is not the same as
+                confirming an establishment in FDA systems. Use Verify to run the configured
+                lookup (may be unavailable until an authoritative source is wired).
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={verifyBusy || formatInvalid}
+                  onClick={() => {
+                    void (async () => {
+                      setVerifyError(null);
+                      setVerifyBusy(true);
+                      try {
+                        const result = await verifyFeiEstablishment({
+                          fei: scenario.feiNumber,
+                          companyName: scenario.companyName,
+                        });
+                        onUpdate({ feiVerification: result });
+                      } catch (err) {
+                        setVerifyError(err instanceof Error ? err.message : 'Verification request failed.');
+                      } finally {
+                        setVerifyBusy(false);
+                      }
+                    })();
+                  }}
+                >
+                  {verifyBusy ? (
+                    <>
+                      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                      Checking…
+                    </>
+                  ) : (
+                    'Verify establishment'
+                  )}
+                </Button>
+              </div>
+              {verifyError ? (
+                <p className="text-xs text-brand-warn-text" role="alert">
+                  {verifyError}
+                </p>
+              ) : null}
+              <p
+                className="rounded-md border border-brand-border bg-brand-card-alt px-3 py-2 text-xs leading-relaxed text-brand-muted"
+                role="status"
+              >
+                {summaryLine}
+              </p>
+              {scenario.feiVerification?.matchedFacilityName ? (
+                <div className="text-xs text-brand-muted">
+                  <span className="font-medium text-brand-text">Lookup result: </span>
+                  {scenario.feiVerification.matchedFacilityName}
+                  {scenario.feiVerification.matchedCity || scenario.feiVerification.matchedState
+                    ? ` — ${[scenario.feiVerification.matchedCity, scenario.feiVerification.matchedState]
+                        .filter(Boolean)
+                        .join(', ')}`
+                    : ''}
+                </div>
+              ) : null}
+              {scenario.feiVerification?.notes && scenario.feiVerification.notes.length > 0 ? (
+                <ul className="list-inside list-disc text-xs text-brand-muted">
+                  {scenario.feiVerification.notes.slice(0, 6).map((n, i) => (
+                    <li key={`${i}-${n.slice(0, 24)}`}>{n}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
           ) : null}
         </div>
 

@@ -1,3 +1,8 @@
+import {
+  SIGNAL_KEYS_ORDER,
+  signalLabel,
+  type SignalKey,
+} from '@/lib/signalRegistry';
 import type { InspectionType, QMSAreaKey, RatingValue } from '@/types/scenario';
 
 export interface QMSAreaDef {
@@ -165,25 +170,13 @@ export const OAFRS: readonly OAFRDef[] = [
   { key: 'udi', label: 'Unique Device Identification (21 CFR 830 / 801 Subpart B)' },
 ] as const satisfies readonly OAFRDef[];
 
-export const SIGNALS: readonly string[] = [
-  'Complaint trend',
-  'MDR increase',
-  'MDR — rising 3-year trend',
-  'Incoming failures',
-  'Process variability',
-  'Supplier change',
-  'Recurring CAPA',
-  'Recall / correction',
-  'Class I recall',
-  'Open recall action',
-  'Previous 483 observation',
-  'Warning letter / consent decree',
-  'UDI discrepancy',
-  'Software anomaly',
-  'Cybersecurity signal',
-  'Clinical / performance drift',
-  'Death-type MDR reports',
-] as const satisfies readonly string[];
+/** UI labels for canonical signals (single source: `signalRegistry`). */
+export const SIGNALS: readonly string[] = SIGNAL_KEYS_ORDER.map((k) => signalLabel(k));
+
+/** Map preset / legacy label strings to canonical keys (for migration). */
+export const LABEL_TO_SIGNAL_KEY: Readonly<Record<string, SignalKey>> = Object.fromEntries(
+  SIGNAL_KEYS_ORDER.map((k) => [signalLabel(k), k]),
+) as Readonly<Record<string, SignalKey>>;
 
 export const RLABELS: Record<RatingValue, string> = {
   unknown: 'Not rated',
@@ -205,7 +198,8 @@ export interface PresetDef {
   readonly label: string;
   readonly hint: string;
   readonly risk: string;
-  readonly signals: string[];
+  /** Canonical signal keys (registry). */
+  readonly signals: readonly SignalKey[];
   readonly ai?: boolean;
   readonly sw?: boolean;
   readonly cyber?: boolean;
@@ -217,19 +211,14 @@ export const PRESETS: Record<string, PresetDef> = {
     hint: 'Mechanical fixation, load-bearing hardware, or permanent implants',
     risk:
       'Primary device risks include structural failure under physiological loads, fatigue fracture, screw loosening, or loss of fixation that could require revision surgery or result in serious injury.',
-    signals: [
-      'Complaint trend',
-      'MDR increase',
-      'Recall / correction',
-      'Class I recall',
-    ],
+    signals: ['complaint_trend', 'mdr_increase', 'recall_correction', 'class_i_recall'],
   },
   sterility: {
     label: 'Sterile barrier / sterile processing',
     hint: 'Terminal sterilization, aseptic processing, or sterile packaging integrity',
     risk:
       'Primary risks include loss of sterility assurance, microbial contamination, packaging seal failure, or reprocessing errors that could lead to infection or unusable product.',
-    signals: ['Process variability', 'Incoming failures', 'Complaint trend', 'Recall / correction'],
+    signals: ['process_variability', 'incoming_failures', 'complaint_trend', 'recall_correction'],
   },
   software: {
     label: 'Software-enabled device',
@@ -237,10 +226,10 @@ export const PRESETS: Record<string, PresetDef> = {
     risk:
       'Primary risks include software defects, incorrect outputs or alarms, inadequate verification and validation, configuration errors, and residual defects affecting clinical performance.',
     signals: [
-      'Software anomaly',
-      'Clinical / performance drift',
-      'Complaint trend',
-      'Cybersecurity signal',
+      'software_anomaly',
+      'clinical_performance_drift',
+      'complaint_trend',
+      'cybersecurity_signal',
     ],
     sw: true,
   },
@@ -250,10 +239,10 @@ export const PRESETS: Record<string, PresetDef> = {
     risk:
       'Primary risks include model drift, insufficient training/validation data, bias, unclear change management for model updates, and inadequate monitoring of real-world performance.',
     signals: [
-      'Clinical / performance drift',
-      'Complaint trend',
-      'MDR increase',
-      'Cybersecurity signal',
+      'clinical_performance_drift',
+      'complaint_trend',
+      'mdr_increase',
+      'cybersecurity_signal',
     ],
     ai: true,
     sw: true,
@@ -263,7 +252,7 @@ export const PRESETS: Record<string, PresetDef> = {
     hint: 'Network interfaces, remote monitoring, or updateable software',
     risk:
       'Primary risks include exploitation of remote interfaces, unauthorized access to device or PHI, denial of service, and supply-chain or SBOM gaps affecting safe operation.',
-    signals: ['Cybersecurity signal', 'Software anomaly', 'Complaint trend', 'MDR increase'],
+    signals: ['cybersecurity_signal', 'software_anomaly', 'complaint_trend', 'mdr_increase'],
     cyber: true,
     sw: true,
   },
@@ -272,7 +261,7 @@ export const PRESETS: Record<string, PresetDef> = {
     hint: 'Symbols, instructions for use, and device identification',
     risk:
       'Primary risks include use error from unclear labeling, UDI mismatch between labeling and records, incorrect unit of use identification, and recall drivers tied to labeling corrections.',
-    signals: ['UDI discrepancy', 'Complaint trend', 'Recall / correction', 'Supplier change'],
+    signals: ['udi_discrepancy', 'complaint_trend', 'recall_correction', 'supplier_change'],
   },
   process: {
     label: 'Manufacturing process variability',
@@ -280,10 +269,10 @@ export const PRESETS: Record<string, PresetDef> = {
     risk:
       'Primary risks include unacceptable process variation, out-of-specification dimensions or coating thickness, contamination, and inadequate process validation or monitoring.',
     signals: [
-      'Process variability',
-      'Incoming failures',
-      'Complaint trend',
-      'Recurring CAPA',
+      'process_variability',
+      'incoming_failures',
+      'complaint_trend',
+      'recurring_capa',
     ],
   },
   fracture: {
@@ -291,12 +280,7 @@ export const PRESETS: Record<string, PresetDef> = {
     hint: 'Plates, screws, intramedullary devices, or trauma fixation',
     risk:
       'Primary risks include peri-implant fracture, hardware fatigue, osteolysis, malunion/nonunion drivers, and biomechanical failure that could cause serious injury or death.',
-    signals: [
-      'Complaint trend',
-      'MDR increase',
-      'Death-type MDR reports',
-      'Class I recall',
-    ],
+    signals: ['complaint_trend', 'mdr_increase', 'death_type_mdr', 'class_i_recall'],
   },
 };
 

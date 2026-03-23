@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { dbToScenario, mergeScenarioPatch, scenarioToDb } from '@/lib/scenarioMapper';
+import {
+  dbToScenario,
+  mergePendingScenarioIntoDefault,
+  mergeScenarioPatch,
+  scenarioToDb,
+} from '@/lib/scenarioMapper';
 import {
   aiDevice,
   baselineClean,
   cyberForcause,
   emptyFDAData,
 } from '@/lib/__fixtures__/scenarios';
+import type { SignalKey } from '@/lib/signalRegistry';
 import type { Database } from '@/types/database';
 import type { Scenario } from '@/types/scenario';
 
@@ -44,6 +50,21 @@ describe('scenarioToDb', () => {
     expect(db.sw_enabled).toBe(s.swEnabled);
     expect(db.cyber_enabled).toBe(s.cyberEnabled);
     expect(db.pccp_planned).toBe(s.pccpPlanned);
+    expect(db.fei_verification).toBeNull();
+  });
+
+  it('maps feiVerification to fei_verification JSON and round-trips', () => {
+    const feiVerification = {
+      version: 1 as const,
+      status: 'matched' as const,
+      fei: '1234567890',
+      userInitiatedLookup: true,
+      checkedAt: '2026-01-01T00:00:00.000Z',
+    };
+    const s: Scenario = { ...baselineClean(), feiVerification };
+    expect(scenarioToDb(s).fei_verification).toEqual(feiVerification);
+    const row = toMockRow(s);
+    expect(dbToScenario(row).feiVerification).toEqual(feiVerification);
   });
 
   it('defaults inspType to "baseline" when undefined', () => {
@@ -172,6 +193,24 @@ describe('round-trip: scenarioToDb -> dbToScenario', () => {
   }
 });
 
+describe('mergePendingScenarioIntoDefault', () => {
+  it('normalizes legacy label strings in signals to canonical keys', () => {
+    const merged = mergePendingScenarioIntoDefault({
+      name: 'Test',
+      signals: ['MDR increase', 'Complaint trend'] as unknown as Scenario['signals'],
+    });
+    expect(merged.signals).toEqual(['mdr_increase', 'complaint_trend']);
+  });
+
+  it('moves unrecognized strings to unsupportedSignals', () => {
+    const merged = mergePendingScenarioIntoDefault({
+      signals: ['MDR increase', 'custom worry text'] as unknown as Scenario['signals'],
+    });
+    expect(merged.signals).toEqual(['mdr_increase']);
+    expect(merged.unsupportedSignals).toContain('custom worry text');
+  });
+});
+
 describe('mergeScenarioPatch', () => {
   it('shallow-merges top-level scalar fields', () => {
     const base = baselineClean();
@@ -195,15 +234,15 @@ describe('mergeScenarioPatch', () => {
   });
 
   it('replaces signals array entirely when provided', () => {
-    const base = { ...baselineClean(), signals: ['MDR increase'] };
-    const merged = mergeScenarioPatch(base, { signals: ['Complaint trend'] });
-    expect(merged.signals).toEqual(['Complaint trend']);
+    const base = { ...baselineClean(), signals: ['mdr_increase'] as SignalKey[] };
+    const merged = mergeScenarioPatch(base, { signals: ['complaint_trend'] });
+    expect(merged.signals).toEqual(['complaint_trend']);
   });
 
   it('preserves signals when patch.signals is undefined', () => {
-    const base = { ...baselineClean(), signals: ['MDR increase'] };
+    const base = { ...baselineClean(), signals: ['mdr_increase'] as SignalKey[] };
     const merged = mergeScenarioPatch(base, { companyName: 'New' });
-    expect(merged.signals).toEqual(['MDR increase']);
+    expect(merged.signals).toEqual(['mdr_increase']);
   });
 
   it('replaces fdaData when provided (including null)', () => {
@@ -229,5 +268,18 @@ describe('mergeScenarioPatch', () => {
     const base = { ...baselineClean(), inspectionNarrative: 'keep' };
     const merged = mergeScenarioPatch(base, { companyName: 'New' });
     expect(merged.inspectionNarrative).toBe('keep');
+  });
+
+  it('replaces feiVerification when provided', () => {
+    const base = baselineClean();
+    const fv = {
+      version: 1 as const,
+      status: 'lookup_unavailable' as const,
+      fei: base.feiNumber,
+      userInitiatedLookup: true,
+      checkedAt: '2026-01-01T00:00:00.000Z',
+    };
+    const merged = mergeScenarioPatch(base, { feiVerification: fv });
+    expect(merged.feiVerification).toEqual(fv);
   });
 });

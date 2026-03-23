@@ -1,3 +1,4 @@
+import type { SignalKey } from '@/lib/signalRegistry';
 import type { InspectionType, QMSAreaKey, ScenarioRatings } from './scenario';
 
 /** Inputs required by `buildFocus` and `buildRiskThread` (pure analysis layer). */
@@ -7,7 +8,7 @@ export interface AnalysisContext {
   ratings: ScenarioRatings;
   areaNotes: Record<QMSAreaKey, string>;
   risk: string;
-  signals: string[];
+  signals: SignalKey[];
   aiEnabled: boolean;
   swEnabled: boolean;
   cyberEnabled: boolean;
@@ -75,6 +76,58 @@ export interface ReadinessContext {
   inspType: InspectionType;
   ratings: ScenarioRatings;
   flags: FlagItem[];
+  /** Canonical scenario signals for deterministic weighting (optional for legacy callers). */
+  signalKeys?: SignalKey[];
+  /** Risk text length / content is not scored here; reserved for future use. */
+  risk?: string;
+  marketedUS?: boolean;
+}
+
+/** Structured narrative request — grounded facts for the Edge Function (client-built JSON). */
+export interface NarrativeStructuredPayload {
+  readonly version: 1;
+  readonly scenarioSummary: {
+    readonly name: string;
+    readonly companyName: string;
+    readonly productName: string;
+    readonly inspType: InspectionType | undefined;
+    readonly inspTypeLabel: string | null;
+    readonly marketedUS: boolean;
+    readonly pathway: string;
+    readonly manualClass: string;
+    readonly deviceClass?: string;
+    readonly productCode: string;
+    readonly regulationNum: string;
+    readonly risk: string;
+    readonly technology: {
+      readonly aiEnabled: boolean;
+      readonly swEnabled: boolean;
+      readonly cyberEnabled: boolean;
+      readonly pccpPlanned: boolean;
+    };
+  };
+  readonly normalizedSignals: ReadonlyArray<{ readonly key: SignalKey; readonly label: string }>;
+  readonly unsupportedSignalNotes: readonly string[];
+  readonly fdaSummary: {
+    readonly hasData: boolean;
+    readonly error: string | null;
+    readonly gudidUrl: string | null;
+    readonly mdrByYear: Record<string, number>;
+    readonly mdrTypes: Record<string, number>;
+    readonly recallCount: number;
+    readonly recallSample: readonly string[];
+  };
+  readonly triangulationFlags: ReadonlyArray<{
+    readonly severity: FlagSeverity;
+    readonly area: QMSAreaKey;
+    readonly label: string;
+    readonly detail: string;
+  }>;
+  readonly readinessSummary: ReadinessSummary | null;
+  readonly riskThreadPreview: {
+    readonly entry: QMSAreaKey;
+    readonly sequence: readonly QMSAreaKey[];
+  };
 }
 
 export type FlagSeverity = 'high' | 'medium' | 'low';
