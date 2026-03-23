@@ -23,6 +23,58 @@ function writeUsesToStorage(count: number): void {
   }
 }
 
+function isFunctionsHttpError(
+  error: unknown,
+): error is { name: 'FunctionsHttpError'; message: string; context: Response } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    error.name === 'FunctionsHttpError' &&
+    'context' in error &&
+    error.context instanceof Response
+  );
+}
+
+function isFunctionsFetchError(error: unknown): error is { name: 'FunctionsFetchError' } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    error.name === 'FunctionsFetchError'
+  );
+}
+
+function messageFromErrorBody(parsed: unknown): string | null {
+  if (!parsed || typeof parsed !== 'object') return null;
+  if ('error' in parsed && typeof parsed.error === 'string') return parsed.error;
+  if ('message' in parsed && typeof parsed.message === 'string') return parsed.message;
+  if ('msg' in parsed && typeof parsed.msg === 'string') return parsed.msg;
+  return null;
+}
+
+async function narrativeErrorMessage(error: unknown): Promise<string> {
+  if (isFunctionsHttpError(error)) {
+    const parsed = (await error.context.json().catch(() => null)) as unknown;
+    const fromBody = messageFromErrorBody(parsed);
+    if (fromBody) {
+      const lower = fromBody.toLowerCase();
+      if (error.context.status === 401 || lower.includes('unauthorized') || lower.includes('jwt')) {
+        return 'Session was rejected by the narrative service (often an expired login). Sign out, sign in again, then retry.';
+      }
+      return fromBody;
+    }
+    if (error.context.status === 401) {
+      return 'Session was rejected by the narrative service (often an expired login). Sign out, sign in again, then retry.';
+    }
+    return error.message;
+  }
+  if (isFunctionsFetchError(error)) {
+    return 'Could not reach the narrative service. Deploy the narrative Edge Function to your Supabase project (supabase functions deploy narrative) and confirm VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your app build.';
+  }
+  return error instanceof Error ? error.message : 'Narrative request failed.';
+}
+
 export interface UseNarrativeResult {
   narrative: string;
   loading: boolean;
@@ -68,38 +120,42 @@ export function useNarrative(): UseNarrativeResult {
         return;
       }
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const res = await fetch(`${supabaseUrl}/functions/v1/narrative`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: anonKey,
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const body = (await res.json()) as { text?: string; error?: string };
-
-      if (!res.ok) {
-        setError(body.error ?? `Request failed (${res.status})`);
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      const activeSession = refreshed.session ?? session;
+      if (!activeSession?.access_token) {
+        setError(
+          refreshError?.message ??
+            'Your session could not be refreshed. Sign out, sign in again, then try again.',
+        );
         return;
       }
 
-      if (typeof body.text !== 'string') {
+      const { data, error: fnError } = await supabase.functions.invoke<{ text?: string; error?: string }>(
+        'narrative',
+        {
+          body: { prompt },
+          headers: {
+            Authorization: `Bearer ${activeSession.access_token}`,
+          },
+        },
+      );
+
+      if (fnError) {
+        setError(await narrativeErrorMessage(fnError));
+        return;
+      }
+
+      if (!data || typeof data.text !== 'string') {
         setError('Invalid response from narrative service.');
         return;
       }
 
-      setNarrative(body.text);
+      setNarrative(data.text);
       const next = currentUses + 1;
       writeUsesToStorage(next);
       setUsesThisSession(next);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Narrative request failed.';
-      setError(message);
+      setError(await narrativeErrorMessage(err));
     } finally {
       setLoading(false);
     }

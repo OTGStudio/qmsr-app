@@ -1,11 +1,12 @@
 import Stripe from 'npm:stripe';
 import { createClient } from 'npm:@supabase/supabase-js';
-import { corsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!);
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const cors = getCorsHeaders(req);
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   const { priceId, userId, successUrl, cancelUrl } = await req.json();
 
@@ -39,6 +40,6 @@ Deno.serve(async (req) => {
   });
 
   return new Response(JSON.stringify({ url: session.url }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
   });
 });
