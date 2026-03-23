@@ -12,6 +12,7 @@ import {
   isPremarket,
 } from '@/lib/domain';
 import { cn } from '@/lib/utils';
+import { validateScenario } from '@/lib/validation';
 import type { QMSAreaKey, RatingValue, Scenario, WizardLayoutMode } from '@/types/scenario';
 
 const CANONICAL_SIGNAL_SET = new Set(SIGNALS);
@@ -72,6 +73,9 @@ export function Step7Review({
   const riskEmpty = scenario.risk.trim().length === 0;
   const noInspType = scenario.inspType == null;
 
+  const validation = validateScenario(scenario);
+  const hasErrors = validation.errors.length > 0;
+
   const weakAreas = AREA_ORDER.filter((k) => scenario.ratings[k] === 'weak').map(
     (k) => areaByKey[k].label,
   );
@@ -100,7 +104,42 @@ export function Step7Review({
 
   return (
     <div className="space-y-4">
-      {noInspType ? (
+      {hasErrors ? (
+        <div
+          data-testid="launch-errors"
+          className={cn(
+            'rounded-lg border border-red-300 bg-red-50 px-4 py-3',
+            'text-sm text-red-800 dark:border-red-700 dark:bg-red-950/30 dark:text-red-300',
+          )}
+          role="alert"
+        >
+          <p className="font-semibold">Cannot launch framework</p>
+          <ul className="mt-1.5 list-inside list-disc space-y-0.5">
+            {validation.errors.map((e) => (
+              <li key={e.code}>{e.message}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {validation.warnings.length > 0 ? (
+        <div
+          data-testid="launch-warnings"
+          className={cn(
+            'rounded-lg border border-brand-warn-border bg-brand-warn-bg px-4 py-3',
+            'text-sm text-brand-warn-text',
+          )}
+          role="status"
+        >
+          <ul className="list-inside list-disc space-y-0.5">
+            {validation.warnings.map((w) => (
+              <li key={w.code}>{w.message}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {noInspType && !hasErrors ? (
         <div
           className={cn(
             'rounded-lg border border-brand-warn-border bg-brand-warn-bg px-4 py-3',
@@ -114,7 +153,7 @@ export function Step7Review({
         </div>
       ) : null}
 
-      {riskEmpty ? (
+      {riskEmpty && !hasErrors ? (
         <div
           className={cn(
             'rounded-lg border border-brand-warn-border bg-brand-warn-bg px-4 py-3',
@@ -307,7 +346,8 @@ export function Step7Review({
         <Button
           type="button"
           size="lg"
-          disabled={isLaunchPending}
+          data-testid="launch-btn"
+          disabled={isLaunchPending || hasErrors}
           className={cn(
             'h-11 min-w-[min(100%,280px)] px-8 text-base font-semibold',
             'bg-brand-accent text-white hover:bg-brand-accent/90',

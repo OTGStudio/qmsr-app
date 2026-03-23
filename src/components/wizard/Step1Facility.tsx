@@ -1,6 +1,9 @@
+import { useState } from 'react';
+
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { validateFEI } from '@/lib/validation';
 import type { WizardStepProps } from '@/types/scenario';
 
 const fieldLabelClass =
@@ -19,6 +22,7 @@ export function Step1Facility({
   wizardLayout = 'guided',
 }: WizardStepProps) {
   const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
+  const [feiError, setFeiError] = useState<string | null>(null);
 
   return (
     <Card className="border-brand-border bg-brand-card">
@@ -86,16 +90,40 @@ export function Step1Facility({
           </div>
           <Input
             id={fid('wizard-fei-number')}
+            data-testid="fei-input"
             name="feiNumber"
             inputMode="numeric"
             autoComplete="off"
             value={scenario.feiNumber}
             onChange={(e) => {
               onUpdate({ feiNumber: e.target.value });
+              if (feiError) {
+                const err = validateFEI(e.target.value);
+                setFeiError(err?.message ?? null);
+              }
             }}
+            onBlur={() => {
+              const err = validateFEI(scenario.feiNumber);
+              setFeiError(err?.message ?? null);
+            }}
+            aria-invalid={feiError != null}
+            aria-describedby={feiError ? fid('fei-error') : undefined}
             placeholder="10 digits"
-            className={inputClassName}
+            className={cn(
+              inputClassName,
+              feiError && 'border-brand-warn-border',
+            )}
           />
+          {feiError ? (
+            <p
+              id={fid('fei-error')}
+              data-testid="fei-error"
+              className="mt-1.5 text-xs text-brand-warn-text"
+              role="alert"
+            >
+              {feiError}
+            </p>
+          ) : null}
         </div>
 
         <div
