@@ -25,9 +25,13 @@ function NarrativeViewInner({
   flags,
   isM2,
   premarket,
+  onScenarioUpdate,
 }: NarrativeViewProps) {
   const { user, loading: authLoading } = useAuth();
-  const { narrative, loading, error, usesLeft, generate } = useNarrative();
+  const { narrative, loading, error, usesLeft, generate } = useNarrative(
+    scenario.inspectionNarrative,
+    (text) => onScenarioUpdate({ inspectionNarrative: text }),
+  );
 
   const narrativePrompt = useMemo(() => {
     if (!scenario.risk.trim()) return null;
@@ -230,6 +234,7 @@ export function NarrativeView() {
     flags: ctx.flags,
     isM2: ctx.isM2,
     premarket: ctx.premarket,
+    onScenarioUpdate: ctx.update,
   };
   return <NarrativeViewInner {...props} />;
 }

@@ -89,6 +89,7 @@ export type Database = {
           fda_pulled_at: string | null
           fei_number: string | null
           id: string
+          inspection_narrative: string | null
           insp_type: string
           manual_class: string | null
           marketed_us: boolean | null
@@ -119,6 +120,7 @@ export type Database = {
           fda_pulled_at?: string | null
           fei_number?: string | null
           id?: string
+          inspection_narrative?: string | null
           insp_type?: string
           manual_class?: string | null
           marketed_us?: boolean | null
@@ -149,6 +151,7 @@ export type Database = {
           fda_pulled_at?: string | null
           fei_number?: string | null
           id?: string
+          inspection_narrative?: string | null
           insp_type?: string
           manual_class?: string | null
           marketed_us?: boolean | null

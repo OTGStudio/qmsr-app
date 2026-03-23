@@ -90,8 +90,14 @@ export interface UseNarrativeResult {
   generate: (prompt: string) => Promise<void>;
 }
 
-export function useNarrative(): UseNarrativeResult {
-  const [narrative, setNarrative] = useState('');
+/**
+ * @param storedNarrative - Narrative text loaded from the scenario (persists across navigation).
+ * @param onPersist - Called with new text after a successful generation so it can be saved on the scenario row.
+ */
+export function useNarrative(
+  storedNarrative: string,
+  onPersist: (text: string) => void,
+): UseNarrativeResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usesThisSession, setUsesThisSession] = useState(readUsesFromStorage);
@@ -101,74 +107,77 @@ export function useNarrative(): UseNarrativeResult {
     [usesThisSession],
   );
 
-  const generate = useCallback(async (prompt: string) => {
-    const currentUses = readUsesFromStorage();
-    if (currentUses >= RATE_LIMIT) {
-      setError('Session limit reached');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        setError(sessionError.message);
-        return;
-      }
-      if (!session?.access_token) {
-        setError('Sign in to generate a narrative.');
+  const generate = useCallback(
+    async (prompt: string) => {
+      const currentUses = readUsesFromStorage();
+      if (currentUses >= RATE_LIMIT) {
+        setError('Session limit reached');
         return;
       }
 
-      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-      const activeSession = refreshed.session ?? session;
-      if (!activeSession?.access_token) {
-        setError(
-          refreshError?.message ??
-            'Your session could not be refreshed. Sign out, sign in again, then try again.',
-        );
-        return;
-      }
+      setLoading(true);
+      setError(null);
 
-      const { data, error: fnError } = await supabase.functions.invoke<{ text?: string; error?: string }>(
-        'narrative',
-        {
-          body: { prompt },
-          headers: {
-            Authorization: `Bearer ${activeSession.access_token}`,
+      try {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          setError(sessionError.message);
+          return;
+        }
+        if (!session?.access_token) {
+          setError('Sign in to generate a narrative.');
+          return;
+        }
+
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+        const activeSession = refreshed.session ?? session;
+        if (!activeSession?.access_token) {
+          setError(
+            refreshError?.message ??
+              'Your session could not be refreshed. Sign out, sign in again, then try again.',
+          );
+          return;
+        }
+
+        const { data, error: fnError } = await supabase.functions.invoke<{ text?: string; error?: string }>(
+          'narrative',
+          {
+            body: { prompt },
+            headers: {
+              Authorization: `Bearer ${activeSession.access_token}`,
+            },
           },
-        },
-      );
+        );
 
-      if (fnError) {
-        setError(await narrativeErrorMessage(fnError));
-        return;
+        if (fnError) {
+          setError(await narrativeErrorMessage(fnError));
+          return;
+        }
+
+        if (!data || typeof data.text !== 'string') {
+          setError('Invalid response from narrative service.');
+          return;
+        }
+
+        onPersist(data.text);
+        const next = currentUses + 1;
+        writeUsesToStorage(next);
+        setUsesThisSession(next);
+      } catch (err) {
+        setError(await narrativeErrorMessage(err));
+      } finally {
+        setLoading(false);
       }
-
-      if (!data || typeof data.text !== 'string') {
-        setError('Invalid response from narrative service.');
-        return;
-      }
-
-      setNarrative(data.text);
-      const next = currentUses + 1;
-      writeUsesToStorage(next);
-      setUsesThisSession(next);
-    } catch (err) {
-      setError(await narrativeErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [onPersist],
+  );
 
   return {
-    narrative,
+    narrative: storedNarrative,
     loading,
     error,
     usesThisSession,

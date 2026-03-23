@@ -86,6 +86,10 @@ export function scenarioToDb(scenario: Scenario): ScenarioInsert {
     area_notes: scenario.areaNotes as unknown as Json,
     fda_data: (scenario.fdaData ?? null) as unknown as Json | null,
     fda_pulled_at: scenario.fdaPulledAt ?? null,
+    inspection_narrative:
+      scenario.inspectionNarrative.trim() === ''
+        ? null
+        : scenario.inspectionNarrative.trim(),
   };
 }
 
@@ -99,6 +103,10 @@ export function mergeScenarioPatch(base: Scenario, patch: Partial<Scenario>): Sc
     signals: patch.signals !== undefined ? patch.signals : base.signals,
     fdaData: patch.fdaData !== undefined ? patch.fdaData : base.fdaData,
     fdaPulledAt: patch.fdaPulledAt !== undefined ? patch.fdaPulledAt : base.fdaPulledAt,
+    inspectionNarrative:
+      patch.inspectionNarrative !== undefined
+        ? patch.inspectionNarrative
+        : base.inspectionNarrative,
   };
 }
 
@@ -128,5 +136,6 @@ export function dbToScenario(row: Tables<'scenarios'>): Scenario {
     areaNotes: parseAreaNotes(row.area_notes),
     fdaData: (row.fda_data as FDAData | null | undefined) ?? null,
     fdaPulledAt: row.fda_pulled_at ?? null,
+    inspectionNarrative: row.inspection_narrative ?? '',
   };
 }

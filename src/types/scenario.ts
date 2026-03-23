@@ -58,6 +58,8 @@ export interface Scenario {
   // FDA data cache
   fdaData?: FDAData | null;
   fdaPulledAt?: string | null;
+  /** Cached inspection narrative from the narrative Edge Function (saved with scenario). */
+  inspectionNarrative: string;
 }
 
 export const DEFAULT_RATINGS = {
@@ -91,4 +93,5 @@ export const DEFAULT_SCENARIO = {
   areaNotes: { mgmt: '', dd: '', prod: '', change: '', out: '', meas: '' },
   fdaData: null,
   fdaPulledAt: null,
+  inspectionNarrative: '',
 } satisfies Scenario;

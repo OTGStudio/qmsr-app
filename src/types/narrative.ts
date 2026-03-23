@@ -7,4 +7,5 @@ export interface NarrativeViewProps {
   flags: FlagItem[];
   isM2: boolean;
   premarket: boolean;
+  onScenarioUpdate: (patch: Partial<Scenario>) => void;
 }

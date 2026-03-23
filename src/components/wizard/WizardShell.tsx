@@ -122,8 +122,8 @@ export function WizardShell() {
     }
 
     try {
-      const parsed = JSON.parse(raw) as Scenario;
-      setScenario(parsed);
+      const parsed = JSON.parse(raw) as Partial<Scenario>;
+      setScenario({ ...DEFAULT_SCENARIO, ...parsed });
       setStep(7);
       sessionStorage.removeItem(PENDING_SCENARIO_STORAGE_KEY);
       toast.success('Your scenario was restored. Tap Launch to save.');
