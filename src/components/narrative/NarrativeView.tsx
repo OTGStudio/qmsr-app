@@ -38,7 +38,7 @@ function NarrativeViewInner({
     <div className="flex flex-col gap-6">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-brand-accent">
-          Elsa-style inspection narrative — powered by Claude
+          Elsa-style inspection narrative — AI Powered
         </p>
         <h2 className="font-serif text-xl font-semibold text-brand-text md:text-2xl">
           Inspection narrative

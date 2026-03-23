@@ -62,10 +62,13 @@ export function useFDA(
       const hasCriteria =
         Boolean(s.companyName.trim()) ||
         Boolean(s.productCode.trim()) ||
-        Boolean(s.feiNumber.trim());
+        Boolean(s.feiNumber.trim()) ||
+        Boolean(s.productName.trim());
 
       if (!hasCriteria) {
-        setError('Enter firm name, product code, or FEI in the scenario first.');
+        setError(
+          'Add firm name, product code, FEI, or product / device name in the scenario first.',
+        );
         return;
       }
 

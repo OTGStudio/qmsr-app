@@ -13,11 +13,12 @@ function quoteSearchTerm(value: string): string {
 }
 
 export function buildFDASearchTerms(
-  scenario: Pick<Scenario, 'companyName' | 'productCode' | 'feiNumber'>,
+  scenario: Pick<Scenario, 'companyName' | 'productCode' | 'feiNumber' | 'productName'>,
 ): { eventSearch: string | null; recallSearch: string | null } {
   const productCode = scenario.productCode.trim();
   const companyName = scenario.companyName.trim();
   const fei = scenario.feiNumber.trim();
+  const productName = (scenario.productName ?? '').trim();
 
   let eventSearch: string | null = null;
   if (productCode && companyName) {
@@ -26,6 +27,13 @@ export function buildFDASearchTerms(
       'AND',
       `manufacturer_d_name.exact:${quoteSearchTerm(companyName)}`,
     ].join('+');
+  } else if (productCode) {
+    eventSearch = `device.device_report_product_code:${productCode}`;
+  } else if (companyName) {
+    eventSearch = `manufacturer_d_name.exact:${quoteSearchTerm(companyName)}`;
+  } else if (productName) {
+    const q = quoteSearchTerm(productName);
+    eventSearch = `(device.brand_name:${q}+OR+device.generic_name:${q})`;
   }
 
   let recallSearch: string | null = null;
@@ -254,7 +262,7 @@ function recallItemToFdaRecord(item: RecallItem): FDARecallRecord {
 }
 
 export async function fetchFDAData(
-  scenario: Pick<Scenario, 'companyName' | 'productCode' | 'feiNumber'>,
+  scenario: Pick<Scenario, 'companyName' | 'productCode' | 'feiNumber' | 'productName'>,
   signal?: AbortSignal,
 ): Promise<FDAData> {
   const { eventSearch, recallSearch } = buildFDASearchTerms(scenario);

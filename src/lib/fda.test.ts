@@ -12,21 +12,50 @@ import {
 } from '@/lib/fda';
 
 describe('buildFDASearchTerms', () => {
-  it('returns null event search when product code or company name is missing', () => {
+  it('returns null event search when no MDR search fields are set', () => {
+    expect(
+      buildFDASearchTerms({
+        companyName: '',
+        productCode: '',
+        feiNumber: '3001234567',
+        productName: '',
+      }).eventSearch,
+    ).toBeNull();
+  });
+
+  it('uses manufacturer-only device event search when company is set without product code', () => {
     expect(
       buildFDASearchTerms({
         companyName: 'Acme',
         productCode: '',
         feiNumber: '',
+        productName: '',
       }).eventSearch,
-    ).toBeNull();
+    ).toBe('manufacturer_d_name.exact:"Acme"');
+  });
+
+  it('uses product-code-only device event search when code is set without company', () => {
     expect(
       buildFDASearchTerms({
         companyName: '',
         productCode: 'ABC',
         feiNumber: '',
+        productName: '',
       }).eventSearch,
-    ).toBeNull();
+    ).toBe('device.device_report_product_code:ABC');
+  });
+
+  it('uses brand or generic name search when only device name is set', () => {
+    expect(
+      buildFDASearchTerms({
+        companyName: '',
+        productCode: '',
+        feiNumber: '',
+        productName: 'Model X Pump',
+      }).eventSearch,
+    ).toBe(
+      '(device.brand_name:"Model X Pump"+OR+device.generic_name:"Model X Pump")',
+    );
   });
 
   it('builds device event search with product code and exact manufacturer name', () => {
@@ -34,6 +63,7 @@ describe('buildFDASearchTerms', () => {
       companyName: 'Acme Med',
       productCode: 'LZK',
       feiNumber: '',
+      productName: '',
     });
     expect(eventSearch).toBe(
       'device.device_report_product_code:LZK+AND+manufacturer_d_name.exact:"Acme Med"',
@@ -45,6 +75,7 @@ describe('buildFDASearchTerms', () => {
       companyName: 'Say "Hi"',
       productCode: 'X',
       feiNumber: '',
+      productName: '',
     });
     expect(eventSearch).toContain('manufacturer_d_name.exact:"Say \\"Hi\\""');
   });
@@ -54,6 +85,7 @@ describe('buildFDASearchTerms', () => {
       companyName: '',
       productCode: 'LZK',
       feiNumber: '3001234567',
+      productName: '',
     });
     expect(recallSearch).toBe('firm_fei_number:3001234567+AND+product_code:LZK');
   });
@@ -63,6 +95,7 @@ describe('buildFDASearchTerms', () => {
       companyName: 'Beta Corp',
       productCode: 'AB',
       feiNumber: '',
+      productName: '',
     });
     expect(recallSearch).toBe('recalling_firm:"Beta Corp"+AND+product_code:AB');
   });
@@ -72,6 +105,7 @@ describe('buildFDASearchTerms', () => {
       companyName: 'Gamma',
       productCode: '',
       feiNumber: '',
+      productName: '',
     });
     expect(recallSearch).toBe('recalling_firm:"Gamma"');
   });
@@ -396,6 +430,7 @@ describe('fetchFDAData', () => {
       companyName: 'Acme',
       productCode: 'LZK',
       feiNumber: '3000000001',
+      productName: '',
     });
 
     expect(data.mdrTotal).toBe(60);
@@ -432,6 +467,7 @@ describe('fetchFDAData', () => {
       companyName: 'Solo',
       productCode: 'X',
       feiNumber: '',
+      productName: '',
     });
 
     expect(data.mdrOlder3yr).toBe(0);

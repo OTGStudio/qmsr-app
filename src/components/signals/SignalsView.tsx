@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 
 import { FlagCard } from '@/components/signals/FlagCard';
 import { MDRSparkline } from '@/components/signals/MDRSparkline';
@@ -63,11 +63,13 @@ function SignalsViewInner({
   const hasSearchCriteria =
     Boolean(scenario.companyName.trim()) ||
     Boolean(scenario.productCode.trim()) ||
-    Boolean(scenario.feiNumber.trim());
+    Boolean(scenario.feiNumber.trim()) ||
+    Boolean(scenario.productName.trim());
 
   const firmDisplay = scenario.companyName.trim() || '—';
   const codeDisplay = scenario.productCode.trim() || '—';
   const feiDisplay = scenario.feiNumber.trim() || '—';
+  const deviceDisplay = scenario.productName.trim() || '—';
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,9 +90,9 @@ function SignalsViewInner({
           >
             openFDA
           </a>{' '}
-          public device APIs (adverse events and recalls) using your firm name, product code, and
-          FEI when provided. Counts are informational and depend on how manufacturers report to
-          FDA; they are not inspection predictions.
+          public device APIs (adverse events and recalls) using your firm name, product code, FEI,
+          and product or device name when provided. Counts are informational and depend on how
+          manufacturers report to FDA; they are not inspection predictions.
         </p>
       </div>
 
@@ -111,8 +113,8 @@ function SignalsViewInner({
         <CardHeader className="pb-4">
           <CardTitle className="font-serif text-lg">Pull openFDA data</CardTitle>
           <CardDescription className="text-brand-muted">
-            Status: searches use firm name &apos;{firmDisplay}&apos;, product code &apos;
-            {codeDisplay}&apos;, FEI &apos;{feiDisplay}&apos;.
+            Status: firm &apos;{firmDisplay}&apos;, product code &apos;{codeDisplay}&apos;, FEI
+            &apos;{feiDisplay}&apos;, device name &apos;{deviceDisplay}&apos;.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pt-0">
@@ -135,7 +137,14 @@ function SignalsViewInner({
           </div>
           {!hasSearchCriteria ? (
             <p className="text-sm text-brand-muted">
-              Enter firm name, product code, or FEI in the scenario first.
+              Add at least one of firm name, product code, FEI, or product / device name via{' '}
+              <Link
+                to="/app/new"
+                className="font-medium text-brand-accent underline-offset-2 hover:underline"
+              >
+                Edit inputs
+              </Link>{' '}
+              first.
             </p>
           ) : null}
           {error ? (
