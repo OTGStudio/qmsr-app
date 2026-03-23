@@ -152,8 +152,10 @@ export function WizardShell() {
       try {
         const { id } = await createMutation.mutateAsync(completed);
         navigate(`/app/s/${id}`);
-      } catch {
-        toast.error('Failed to save scenario. Please try again.');
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to save scenario. Please try again.';
+        toast.error(message);
       }
     },
     [user, createMutation, navigate],

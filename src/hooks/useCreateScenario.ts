@@ -6,33 +6,44 @@ import type { Scenario } from '@/types/scenario';
 
 export async function createScenario(scenario: Scenario): Promise<{ id: string }> {
   const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (authError) {
-    throw new Error(`Authentication error: ${authError.message}`);
-  }
-  if (!user) {
-    throw new Error('You must be signed in to save a scenario.');
+  let userId = session?.user?.id;
+
+  if (!userId) {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError) {
+      throw new Error(`Authentication error: ${authError.message}`);
+    }
+    if (!user?.id) {
+      throw new Error('You must be signed in to save a scenario.');
+    }
+    userId = user.id;
   }
 
   const insert = scenarioToDb(scenario);
 
   const { data, error } = await supabase
     .from('scenarios')
-    .insert({ ...insert, user_id: user.id })
+    .insert({ ...insert, user_id: userId })
     .select('id')
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw new Error(`Failed to save scenario: ${error.message}`);
   }
-  if (!data?.id) {
-    throw new Error('Failed to save scenario: no row returned from database.');
+  const rowId = data?.id;
+  if (!rowId) {
+    throw new Error(
+      'Failed to save scenario: no row returned. If you use Row Level Security, confirm the insert policy allows returning the new row.',
+    );
   }
 
-  return { id: data.id };
+  return { id: rowId };
 }
 
 export function useCreateScenario() {
