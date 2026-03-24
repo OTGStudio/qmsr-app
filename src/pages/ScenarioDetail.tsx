@@ -186,7 +186,7 @@ export function ScenarioDetail() {
             {overallReadiness.label}
           </Badge>
           <Button asChild variant="outline" size="sm" className="shrink-0">
-            <Link to="/app/new">← Edit inputs</Link>
+            <Link to={`/app/new?edit=${id}`}>← Edit inputs</Link>
           </Button>
         </div>
       </div>

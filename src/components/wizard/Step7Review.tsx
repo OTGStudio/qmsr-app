@@ -74,6 +74,7 @@ export function Step7Review({
 
   const validation = validateScenario(scenario);
   const hasErrors = validation.errors.length > 0;
+  const isEditingExisting = Boolean(scenario.id?.trim());
 
   const weakAreas = AREA_ORDER.filter((k) => scenario.ratings[k] === 'weak').map(
     (k) => areaByKey[k].label,
@@ -403,6 +404,8 @@ export function Step7Review({
               <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
               Saving…
             </>
+          ) : isEditingExisting ? (
+            'Save changes →'
           ) : (
             'Launch Framework →'
           )}

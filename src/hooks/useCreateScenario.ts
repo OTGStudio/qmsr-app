@@ -4,6 +4,20 @@ import { supabase } from '@/lib/supabase';
 import { scenarioToDb } from '@/lib/scenarioMapper';
 import type { Scenario } from '@/types/scenario';
 
+/** Insert a new scenario or update an existing row when `scenario.id` is set. */
+export async function saveScenario(scenario: Scenario): Promise<{ id: string }> {
+  const existingId = scenario.id?.trim();
+  if (existingId) {
+    const row = scenarioToDb(scenario);
+    const { error } = await supabase.from('scenarios').update(row).eq('id', existingId);
+    if (error) {
+      throw new Error(`Failed to save scenario: ${error.message}`);
+    }
+    return { id: existingId };
+  }
+  return createScenario(scenario);
+}
+
 export async function createScenario(scenario: Scenario): Promise<{ id: string }> {
   const {
     data: { session },
@@ -48,6 +62,6 @@ export async function createScenario(scenario: Scenario): Promise<{ id: string }
 
 export function useCreateScenario() {
   return useMutation({
-    mutationFn: createScenario,
+    mutationFn: saveScenario,
   });
 }

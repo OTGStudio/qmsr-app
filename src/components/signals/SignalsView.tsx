@@ -139,7 +139,7 @@ function SignalsViewInner({
             <p className="text-sm text-brand-muted">
               Add at least one of firm name, product code, FEI, or product / device name via{' '}
               <Link
-                to="/app/new"
+                to={scenario.id ? `/app/new?edit=${scenario.id}` : '/app/new'}
                 className="font-medium text-brand-accent underline-offset-2 hover:underline"
               >
                 Edit inputs

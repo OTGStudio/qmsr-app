@@ -11,7 +11,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useCreateScenario } from '@/hooks/useCreateScenario';
-import { mergePendingScenarioIntoDefault, PENDING_SCENARIO_STORAGE_KEY } from '@/lib/scenarioMapper';
+import {
+  dbToScenario,
+  mergePendingScenarioIntoDefault,
+  PENDING_SCENARIO_STORAGE_KEY,
+} from '@/lib/scenarioMapper';
+import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/AuthProvider';
 import {
@@ -58,6 +63,10 @@ export function WizardShell() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
   const resumeConsumedRef = useRef(false);
+  const prevEditIdRef = useRef<string | null>(null);
+
+  const editId = searchParams.get('edit');
+  const [editLoading, setEditLoading] = useState(() => Boolean(editId));
 
   const update = useCallback((patch: Partial<Scenario>) => {
     setScenario((prev) => ({ ...prev, ...patch }));
@@ -98,8 +107,67 @@ export function WizardShell() {
   const resumeFlag = searchParams.get('resume');
 
   useEffect(() => {
+    if (!editId) {
+      if (prevEditIdRef.current !== null) {
+        setScenario({ ...DEFAULT_SCENARIO });
+        setStep(1);
+        setWizardLayout('guided');
+      }
+      prevEditIdRef.current = null;
+      setEditLoading(false);
+      return;
+    }
+
+    prevEditIdRef.current = editId;
+
+    if (authLoading) {
+      setEditLoading(true);
+      return;
+    }
+
+    let cancelled = false;
+    setEditLoading(true);
+
+    void supabase
+      .from('scenarios')
+      .select('*')
+      .eq('id', editId)
+      .single()
+      .then(({ data, error: fetchError }) => {
+        if (cancelled) return;
+        if (fetchError || !data) {
+          toast.error(
+            fetchError
+              ? `Could not load scenario for editing: ${fetchError.message}`
+              : 'Scenario not found.',
+          );
+          setSearchParams(
+            (prev) => {
+              const next = new URLSearchParams(prev);
+              next.delete('edit');
+              return next;
+            },
+            { replace: true },
+          );
+          setEditLoading(false);
+          return;
+        }
+        setScenario(dbToScenario(data));
+        setStep(1);
+        setEditLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editId, authLoading, setSearchParams]);
+
+  useEffect(() => {
     if (resumeFlag !== '1') {
       resumeConsumedRef.current = false;
+      return;
+    }
+    if (searchParams.get('edit')) {
       return;
     }
     if (resumeConsumedRef.current) return;
@@ -131,7 +199,7 @@ export function WizardShell() {
       sessionStorage.removeItem(PENDING_SCENARIO_STORAGE_KEY);
       toast.error('Could not restore your scenario.');
     }
-  }, [resumeFlag, setSearchParams, authLoading]);
+  }, [resumeFlag, setSearchParams, authLoading, searchParams]);
 
   const handleWizardComplete = useCallback(
     async (completed: Scenario) => {
@@ -165,6 +233,14 @@ export function WizardShell() {
   const signupHref = `/signup?redirect=${encodeURIComponent(AUTH_REDIRECT_PATH)}`;
 
   const isFreeform = wizardLayout === 'freeform';
+
+  if (editLoading && editId) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-brand-bg px-4 text-brand-text">
+        <p className="text-sm text-brand-muted">Loading scenario…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text">
