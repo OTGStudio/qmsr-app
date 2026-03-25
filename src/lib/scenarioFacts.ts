@@ -81,6 +81,43 @@ function extractFromText(scenario: Scenario): ScenarioFacts {
   const softwareLifecycleDocumented =
     !/software lifecycle.*not|no software lifecycle|lifecycle.*not maintained|lifecycle.*not documented/.test(t);
 
+  // --- TC9: Labeling / UDI ---
+  const labelingDefectPresent = /udi.*discrepanc|label.*defect|label.*error|artwork.*error|labeling.*nonconform/.test(t);
+  const labelingChangeControlPerformed =
+    !labelingDefectPresent ||
+    !/label.*change.*not|no label.*change.*control|label.*not controlled/.test(t);
+
+  // --- TC10: Sterility assurance ---
+  const sterileDevice = /sterile device|sterile product|steriliz.*device|sterile.*implant/.test(t);
+  const sterilityValidationComplete =
+    !sterileDevice ||
+    !/sterilization.*validation.*not|sterilization.*not.*complete|sterility.*not validated/.test(t);
+  const sterilityRevalidatedAfterChange =
+    !sterileDevice ||
+    !/not revalidated|sterilization.*not re-?validated|no revalidation/.test(t);
+
+  // --- TC11: Training / competency ---
+  const trainingRecordsMaintained =
+    !/training.*not maintained|no training record|training.*not documented|training.*inadequate/.test(t);
+  const competencyAssessed =
+    !/competency.*not assessed|no competency.*assessment|competency.*not documented/.test(t);
+
+  // --- TC12: Risk management file ---
+  const riskManagementFileComplete =
+    !/risk.*file.*incomplete|risk.*file.*missing|risk.*management.*incomplete|risk.*analysis.*missing/.test(t);
+  const riskFileUpdatedAfterChange =
+    !/risk.*file.*not updated.*after.*change|risk.*not reassessed.*after.*change|no risk.*update.*after.*change/.test(t);
+
+  // --- TC13: Incoming / nonconforming / calibration ---
+  const incomingFailuresRecurring = /incoming.*fail|incoming.*reject|incoming.*defect|repeated.*incoming/.test(t);
+  const incomingEscalated =
+    !incomingFailuresRecurring ||
+    !/not escalated|no supplier.*corrective|no escalation.*incoming/.test(t);
+  const calibrationCurrent =
+    !/calibration.*lapsed|calibration.*overdue|not calibrated|calibration.*expired/.test(t);
+  const nonconformingProductControlled =
+    !/nonconform.*not controlled|nonconform.*not identified|nonconform.*not segregated/.test(t);
+
   return {
     supplierChange,
     supplierChangeEvaluated,
@@ -104,6 +141,19 @@ function extractFromText(scenario: Scenario): ScenarioFacts {
     processValidationDocumented,
     managementReviewPerformed,
     softwareLifecycleDocumented,
+    labelingDefectPresent,
+    labelingChangeControlPerformed,
+    sterileDevice,
+    sterilityValidationComplete,
+    sterilityRevalidatedAfterChange,
+    trainingRecordsMaintained,
+    competencyAssessed,
+    riskManagementFileComplete,
+    riskFileUpdatedAfterChange,
+    incomingFailuresRecurring,
+    incomingEscalated,
+    calibrationCurrent,
+    nonconformingProductControlled,
   };
 }
 
@@ -152,5 +202,26 @@ export function extractScenarioFacts(scenario: Scenario): ScenarioFacts {
       explicit.managementReviewPerformed ?? regexFacts.managementReviewPerformed,
     softwareLifecycleDocumented:
       explicit.softwareLifecycleDocumented ?? regexFacts.softwareLifecycleDocumented,
+    labelingDefectPresent: explicit.labelingDefectPresent ?? regexFacts.labelingDefectPresent,
+    labelingChangeControlPerformed:
+      explicit.labelingChangeControlPerformed ?? regexFacts.labelingChangeControlPerformed,
+    sterileDevice: explicit.sterileDevice ?? regexFacts.sterileDevice,
+    sterilityValidationComplete:
+      explicit.sterilityValidationComplete ?? regexFacts.sterilityValidationComplete,
+    sterilityRevalidatedAfterChange:
+      explicit.sterilityRevalidatedAfterChange ?? regexFacts.sterilityRevalidatedAfterChange,
+    trainingRecordsMaintained:
+      explicit.trainingRecordsMaintained ?? regexFacts.trainingRecordsMaintained,
+    competencyAssessed: explicit.competencyAssessed ?? regexFacts.competencyAssessed,
+    riskManagementFileComplete:
+      explicit.riskManagementFileComplete ?? regexFacts.riskManagementFileComplete,
+    riskFileUpdatedAfterChange:
+      explicit.riskFileUpdatedAfterChange ?? regexFacts.riskFileUpdatedAfterChange,
+    incomingFailuresRecurring:
+      explicit.incomingFailuresRecurring ?? regexFacts.incomingFailuresRecurring,
+    incomingEscalated: explicit.incomingEscalated ?? regexFacts.incomingEscalated,
+    calibrationCurrent: explicit.calibrationCurrent ?? regexFacts.calibrationCurrent,
+    nonconformingProductControlled:
+      explicit.nonconformingProductControlled ?? regexFacts.nonconformingProductControlled,
   };
 }

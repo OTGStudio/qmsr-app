@@ -538,6 +538,164 @@ export function softwareLifecycleGap(): Scenario {
   };
 }
 
+/** TC9: Labeling / UDI defect without change control — triggers adjudication. */
+export function labelingUdiDefect(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC9 — Labeling UDI defect',
+    companyName: 'LabelCo',
+    productName: 'IV Infusion Set',
+    feiNumber: '9999900009',
+    feiVerification: null,
+    inspType: 'compliance',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'UDI discrepancy found between device label and GUDID listing. Label change control not performed.',
+    signals: ['udi_discrepancy'],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      labelingDefectPresent: true,
+      labelingChangeControlPerformed: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'partial', prod: 'weak', change: 'weak', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC10: Sterility validation gap — triggers adjudication. */
+export function sterilityGap(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC10 — Sterility gap',
+    companyName: 'SterileCorp',
+    productName: 'Surgical Implant',
+    feiNumber: '9999900010',
+    feiVerification: null,
+    inspType: 'baseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '3',
+    classSource: 'manual',
+    deviceClass: '3',
+    risk: 'Sterile device implant. Sterilization validation not complete. Not revalidated after packaging change.',
+    signals: [],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      sterileDevice: true,
+      sterilityValidationComplete: false,
+      sterilityRevalidatedAfterChange: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'partial', prod: 'weak', change: 'weak', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC11: Training / competency gap — triggers adjudication. */
+export function trainingGap(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC11 — Training gap',
+    companyName: 'QuickAssembly',
+    productName: 'Catheter Assembly',
+    feiNumber: '9999900011',
+    feiVerification: null,
+    inspType: 'baseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'Critical assembly operations. Training not maintained. Competency not assessed for production personnel.',
+    signals: [],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      trainingRecordsMaintained: false,
+      competencyAssessed: false,
+    },
+    ratings: { mgmt: 'weak', dd: 'partial', prod: 'partial', change: 'partial', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC12: Risk management file incomplete — triggers adjudication. */
+export function riskFileIncomplete(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC12 — Risk file incomplete',
+    companyName: 'RiskGap Medical',
+    productName: 'Electrosurgical Device',
+    feiNumber: '9999900012',
+    feiVerification: null,
+    inspType: 'nonBaseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'Risk management file incomplete. Risk analysis missing hazard identification section.',
+    signals: [],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      riskManagementFileComplete: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'weak', prod: 'partial', change: 'partial', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC13: Incoming acceptance / calibration gap — triggers adjudication. */
+export function incomingCalibrationGap(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC13 — Incoming / calibration gap',
+    companyName: 'SupplyChain Med',
+    productName: 'Diagnostic Reagent Kit',
+    feiNumber: '9999900013',
+    feiVerification: null,
+    inspType: 'compliance',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'Incoming inspection failures recurring. Not escalated to supplier corrective action. Calibration lapsed on critical measurement equipment. Nonconforming product not controlled.',
+    signals: ['incoming_failures'],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      incomingFailuresRecurring: true,
+      incomingEscalated: false,
+      calibrationCurrent: false,
+      nonconformingProductControlled: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'partial', prod: 'weak', change: 'partial', out: 'weak', meas: 'weak' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
 // ── FDA data factories ───────────────────────────────────────────────
 
 export function emptyFDAData(): FDAData {

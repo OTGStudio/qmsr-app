@@ -11,16 +11,21 @@ import {
   deathMDR,
   designChangeNoVV,
   emptyFDAData,
+  incomingCalibrationGap,
+  labelingUdiDefect,
   managementReviewMissing,
   pmaPremarket,
   postmarketMDR,
   processValidationGap,
   recallScenario,
+  riskFileIncomplete,
   risingMDRData,
   softwareLifecycleGap,
+  sterilityGap,
   strongSystem,
   supplierChange,
   supplierChangeClassIII,
+  trainingGap,
   unvalidatedSpreadsheet,
 } from '@/lib/__fixtures__/scenarios';
 
@@ -148,6 +153,82 @@ describe('buildAdjudication', () => {
       expect(tc8!.riskLevel).toBe('MEDIUM');
       expect(tc8!.qmsAreas).toContain('dd');
       expect(tc8!.authorities.some((a) => a.key === 'software_validation')).toBe(true);
+    });
+  });
+
+  describe('TC9 — Labeling / UDI defect', () => {
+    it('fires with MEDIUM-HIGH risk for labeling defect without change control', () => {
+      const result = buildAdjudication(labelingUdiDefect(), null, []);
+      expect(result.triggered).toBe(true);
+      const tc9 = result.findings.find((f) => f.ruleId === 'TC9_LABELING_UDI_DEFECT');
+      expect(tc9).toBeDefined();
+      expect(tc9!.riskLevel).toBe('MEDIUM-HIGH');
+      expect(tc9!.qmsAreas).toContain('prod');
+      expect(tc9!.qmsAreas).toContain('change');
+    });
+  });
+
+  describe('TC10 — Sterility assurance gap', () => {
+    it('fires with HIGH risk for Class III sterile device without validation', () => {
+      const result = buildAdjudication(sterilityGap(), null, []);
+      expect(result.triggered).toBe(true);
+      const tc10 = result.findings.find((f) => f.ruleId === 'TC10_STERILITY_VALIDATION_INCOMPLETE');
+      expect(tc10).toBeDefined();
+      expect(tc10!.riskLevel).toBe('HIGH');
+      expect(tc10!.qmsAreas).toContain('prod');
+    });
+
+    it('includes revalidation sub-finding', () => {
+      const result = buildAdjudication(sterilityGap(), null, []);
+      const reval = result.findings.find((f) => f.ruleId === 'TC10_STERILITY_NOT_REVALIDATED');
+      expect(reval).toBeDefined();
+    });
+  });
+
+  describe('TC11 — Training / competency gap', () => {
+    it('fires with MEDIUM-HIGH risk for missing training and competency', () => {
+      const result = buildAdjudication(trainingGap(), null, []);
+      expect(result.triggered).toBe(true);
+      const tc11 = result.findings.find((f) => f.ruleId === 'TC11_TRAINING_COMPETENCY_GAP');
+      expect(tc11).toBeDefined();
+      expect(tc11!.riskLevel).toBe('MEDIUM-HIGH');
+      expect(tc11!.qmsAreas).toContain('mgmt');
+      expect(tc11!.authorities.some((a) => a.key === 'qmsr_supplemental')).toBe(true);
+    });
+  });
+
+  describe('TC12 — Risk management file incomplete', () => {
+    it('fires with MEDIUM risk for incomplete risk file', () => {
+      const result = buildAdjudication(riskFileIncomplete(), null, []);
+      expect(result.triggered).toBe(true);
+      const tc12 = result.findings.find((f) => f.ruleId === 'TC12_RISK_FILE_INCOMPLETE');
+      expect(tc12).toBeDefined();
+      expect(tc12!.riskLevel).toBe('MEDIUM');
+      expect(tc12!.qmsAreas).toContain('dd');
+    });
+  });
+
+  describe('TC13 — Incoming / calibration / nonconforming', () => {
+    it('fires for recurring incoming failures not escalated', () => {
+      const result = buildAdjudication(incomingCalibrationGap(), null, []);
+      expect(result.triggered).toBe(true);
+      const incoming = result.findings.find((f) => f.ruleId === 'TC13_INCOMING_NOT_ESCALATED');
+      expect(incoming).toBeDefined();
+      expect(incoming!.qmsAreas).toContain('out');
+    });
+
+    it('fires for lapsed calibration', () => {
+      const result = buildAdjudication(incomingCalibrationGap(), null, []);
+      const cal = result.findings.find((f) => f.ruleId === 'TC13_CALIBRATION_LAPSED');
+      expect(cal).toBeDefined();
+      expect(cal!.riskLevel).toBe('MEDIUM');
+    });
+
+    it('fires for nonconforming product not controlled', () => {
+      const result = buildAdjudication(incomingCalibrationGap(), null, []);
+      const nc = result.findings.find((f) => f.ruleId === 'TC13_NONCONFORMING_NOT_CONTROLLED');
+      expect(nc).toBeDefined();
+      expect(nc!.riskLevel).toBe('MEDIUM-HIGH');
     });
   });
 

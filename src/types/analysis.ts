@@ -264,6 +264,29 @@ export interface ScenarioFacts {
 
   // TC8: Software lifecycle
   readonly softwareLifecycleDocumented: boolean;
+
+  // TC9: Labeling / UDI
+  readonly labelingDefectPresent: boolean;
+  readonly labelingChangeControlPerformed: boolean;
+
+  // TC10: Sterility assurance
+  readonly sterileDevice: boolean;
+  readonly sterilityValidationComplete: boolean;
+  readonly sterilityRevalidatedAfterChange: boolean;
+
+  // TC11: Training / competency
+  readonly trainingRecordsMaintained: boolean;
+  readonly competencyAssessed: boolean;
+
+  // TC12: Risk management file
+  readonly riskManagementFileComplete: boolean;
+  readonly riskFileUpdatedAfterChange: boolean;
+
+  // TC13: Incoming / nonconforming / calibration
+  readonly incomingFailuresRecurring: boolean;
+  readonly incomingEscalated: boolean;
+  readonly calibrationCurrent: boolean;
+  readonly nonconformingProductControlled: boolean;
 }
 
 export type RiskLevel = 'HIGH' | 'MEDIUM-HIGH' | 'MEDIUM' | 'LOW';

@@ -591,6 +591,189 @@ export function Step4Risk({ scenario, onUpdate, fieldIdPrefix = '' }: WizardStep
               </div>
             </>
           ) : null}
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC9: Labeling / UDI */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Labeling / UDI
+            </p>
+            <ToggleRow
+              label="Labeling or UDI defect present"
+              hint="A UDI discrepancy, label error, or artwork defect has been identified."
+              checked={fact(scenario, 'labelingDefectPresent') ?? false}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  labelingDefectPresent: !(fact(scenario, 'labelingDefectPresent') ?? false),
+                })
+              }
+            />
+            {(fact(scenario, 'labelingDefectPresent') ?? false) ? (
+              <ToggleRow
+                label="Labeling change control performed"
+                hint="Labeling change was processed through documented change control procedures."
+                checked={fact(scenario, 'labelingChangeControlPerformed') ?? true}
+                onToggle={() =>
+                  updateFact(scenario, onUpdate, {
+                    labelingChangeControlPerformed: !(fact(scenario, 'labelingChangeControlPerformed') ?? true),
+                  })
+                }
+              />
+            ) : null}
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC10: Sterility assurance */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Sterility assurance
+            </p>
+            <ToggleRow
+              label="Sterile device"
+              hint="The device is provided sterile or requires sterilization processing."
+              checked={fact(scenario, 'sterileDevice') ?? false}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  sterileDevice: !(fact(scenario, 'sterileDevice') ?? false),
+                })
+              }
+            />
+            {(fact(scenario, 'sterileDevice') ?? false) ? (
+              <>
+                <ToggleRow
+                  label="Sterility validation complete"
+                  hint="Sterilization validation (including challenge studies) is fully documented."
+                  checked={fact(scenario, 'sterilityValidationComplete') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      sterilityValidationComplete: !(fact(scenario, 'sterilityValidationComplete') ?? true),
+                    })
+                  }
+                />
+                <ToggleRow
+                  label="Sterilization revalidated after change"
+                  hint="Sterilization process was revalidated following any process or packaging change."
+                  checked={fact(scenario, 'sterilityRevalidatedAfterChange') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      sterilityRevalidatedAfterChange: !(fact(scenario, 'sterilityRevalidatedAfterChange') ?? true),
+                    })
+                  }
+                />
+              </>
+            ) : null}
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC11: Training / competency */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Training &amp; competency
+            </p>
+            <ToggleRow
+              label="Training records maintained"
+              hint="Training records are maintained for personnel performing quality-affecting operations."
+              checked={fact(scenario, 'trainingRecordsMaintained') ?? true}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  trainingRecordsMaintained: !(fact(scenario, 'trainingRecordsMaintained') ?? true),
+                })
+              }
+            />
+            <ToggleRow
+              label="Competency assessed"
+              hint="Competency assessments are documented for critical operations."
+              checked={fact(scenario, 'competencyAssessed') ?? true}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  competencyAssessed: !(fact(scenario, 'competencyAssessed') ?? true),
+                })
+              }
+            />
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC12: Risk management file */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Risk management file
+            </p>
+            <ToggleRow
+              label="Risk management file complete"
+              hint="All required sections are documented: hazard ID, risk estimation, risk control, residual risk."
+              checked={fact(scenario, 'riskManagementFileComplete') ?? true}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  riskManagementFileComplete: !(fact(scenario, 'riskManagementFileComplete') ?? true),
+                })
+              }
+            />
+            <ToggleRow
+              label="Risk file updated after design change"
+              hint="Risk management file was updated to reflect impact of any design change."
+              checked={fact(scenario, 'riskFileUpdatedAfterChange') ?? true}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  riskFileUpdatedAfterChange: !(fact(scenario, 'riskFileUpdatedAfterChange') ?? true),
+                })
+              }
+            />
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC13: Incoming / calibration / nonconforming */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Incoming acceptance &amp; calibration
+            </p>
+            <ToggleRow
+              label="Incoming failures recurring"
+              hint="Repeated incoming inspection failures or supplier defects have been identified."
+              checked={fact(scenario, 'incomingFailuresRecurring') ?? false}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  incomingFailuresRecurring: !(fact(scenario, 'incomingFailuresRecurring') ?? false),
+                })
+              }
+            />
+            {(fact(scenario, 'incomingFailuresRecurring') ?? false) ? (
+              <ToggleRow
+                label="Escalated to supplier corrective action"
+                hint="Recurring failures have been escalated to the supplier with corrective action requested."
+                checked={fact(scenario, 'incomingEscalated') ?? true}
+                onToggle={() =>
+                  updateFact(scenario, onUpdate, {
+                    incomingEscalated: !(fact(scenario, 'incomingEscalated') ?? true),
+                  })
+                }
+              />
+            ) : null}
+            <ToggleRow
+              label="Calibration current"
+              hint="All measurement equipment is within current calibration status."
+              checked={fact(scenario, 'calibrationCurrent') ?? true}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  calibrationCurrent: !(fact(scenario, 'calibrationCurrent') ?? true),
+                })
+              }
+            />
+            <ToggleRow
+              label="Nonconforming product controlled"
+              hint="Nonconforming product is identified, segregated, and dispositioned per documented procedures."
+              checked={fact(scenario, 'nonconformingProductControlled') ?? true}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  nonconformingProductControlled: !(fact(scenario, 'nonconformingProductControlled') ?? true),
+                })
+              }
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

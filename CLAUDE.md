@@ -35,6 +35,10 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 
 ### 3. Adjudication Rules TC4-TC8 (Sprint 3)
 
+### 6. Adjudication Rules TC9-TC13 (Sprint 6)
+
+**Full rule set (TC1-TC13):**
+
 | Rule | Pattern | Risk |
 |------|---------|------|
 | TC1 | Class III supplier change without evaluation | HIGH |
@@ -45,6 +49,11 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 | TC6 | Special process without validation | MEDIUM-HIGH |
 | TC7 | Management review not performed | MEDIUM |
 | TC8 | swEnabled + software lifecycle not documented | MEDIUM-HIGH (III) / MEDIUM |
+| TC9 | Labeling/UDI defect + no change control | MEDIUM-HIGH |
+| TC10 | Sterile device + validation incomplete | HIGH (III) / MEDIUM-HIGH |
+| TC11 | Training not maintained / competency not assessed | MEDIUM-HIGH |
+| TC12 | Risk management file incomplete | MEDIUM-HIGH (III) / MEDIUM |
+| TC13 | Incoming failures not escalated / calibration lapsed / nonconforming not controlled | MEDIUM-HIGH / MEDIUM |
 
 ### 4. Structured Narrative UI (Sprint 4)
 - `AdjudicationCard.tsx` — Presentational component for deterministic findings
@@ -62,19 +71,19 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 - NarrativeView computes validation after generate, displays warnings between adjudication card and prose
 
 ## Test Coverage
-- **405 tests** across 19 files, all passing
-- **18 fixture scenarios** (13 general + 5 TC-specific from TC4-TC8, plus 3 from TC1-TC3)
+- **413 tests** across 19 files, all passing
+- **23 fixture scenarios** (13 general + 3 TC1-TC3 + 5 TC4-TC8 + 5 TC9-TC13) + 4 FDA data factories
 - Regression: all general fixtures return `triggered: false` for adjudication rules
 
 ## Key File Map
 
 ### Types
 - `src/types/scenario.ts` — Scenario interface, DEFAULT_SCENARIO
-- `src/types/analysis.ts` — ScenarioFacts (22 boolean fields), AdjudicationResult, GuardrailCitation, NarrativeStructuredPayloadV2
+- `src/types/analysis.ts` — ScenarioFacts (35 fields), AdjudicationResult, GuardrailCitation, NarrativeStructuredPayloadV2
 
 ### Core Logic
 - `src/lib/analysis.ts` — buildFocus, buildRiskThread, buildOAIFactors, getOverallReadiness, triangulate, buildNarrativeStructuredPayloadV2, buildNarrativeUserMessage, NARRATIVE_SYSTEM_PROMPT
-- `src/lib/adjudication.ts` — buildAdjudication (TC1-TC8), buildTechnologyGuidance
+- `src/lib/adjudication.ts` — buildAdjudication (TC1-TC13), buildTechnologyGuidance
 - `src/lib/scenarioFacts.ts` — extractScenarioFacts (explicit + regex fallback)
 - `src/lib/narrativeValidator.ts` — validateNarrative (post-generation checks)
 - `src/lib/guardrailRegistry.ts` — GUARDRAILS record, citation helpers
@@ -86,7 +95,7 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 - `src/hooks/useNarrative.ts` — NarrativeGenerateInput { systemPrompt, userContent }
 
 ### UI
-- `src/components/wizard/Step4Risk.tsx` — Risk text + technology toggles + inspection context fact toggles (TC1-TC8)
+- `src/components/wizard/Step4Risk.tsx` — Risk text + technology toggles + inspection context fact toggles (TC1-TC13)
 - `src/components/narrative/NarrativeView.tsx` — Computes adjudication, renders AdjudicationCard + LLM prose
 - `src/components/narrative/AdjudicationCard.tsx` — Structured deterministic findings display
 - `src/components/narrative/ValidationWarnings.tsx` — Post-generation validation warning display
@@ -114,6 +123,7 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 - V1 narrative path (`buildNarrativePrompt`) preserved for test backward compatibility
 - Edge function contract: `{ systemPrompt, userContent } → { text }` (unchanged)
 
-## Not Yet Implemented
-- Edge function deployment (maxTokens change + migration 009)
-- Additional adjudication rules beyond TC8
+## Potential Future Work
+- Additional adjudication rules beyond TC13 (internal audit, document control, design input/output/review)
+- Signal-to-adjudication wiring (use existing SignalKeys to influence rule firing)
+- Narrative quality scoring (quantify how well the LLM followed adjudication constraints)

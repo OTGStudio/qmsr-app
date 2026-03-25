@@ -442,6 +442,225 @@ export function buildAdjudication(
     });
   }
 
+  // --- TC9: Labeling / UDI deficiency ---
+  if (facts.labelingDefectPresent && !facts.labelingChangeControlPerformed) {
+    findings.push({
+      ruleId: 'TC9_LABELING_UDI_DEFECT',
+      finding:
+        'A labeling or UDI defect is present without documented labeling change control.',
+      riskLevel: 'MEDIUM-HIGH',
+      authorities: dedupeCitations([...baseBindingCitations(), citation('cp7382850')]),
+      supportingEvidence: [
+        'A labeling defect, UDI discrepancy, or artwork error is indicated.',
+        'Labeling change control is not indicated as performed.',
+      ],
+      inspectionRelevance: [
+        'Under CP 7382.850, labeling control failures create a production controls finding with expansion into change control and measurement/analysis.',
+      ],
+      recommendedActions: [
+        'Investigate and correct the labeling/UDI defect.',
+        'Perform labeling change control per documented procedures.',
+        'Verify UDI-to-device master record alignment.',
+        'Assess field impact for distributed units with labeling defects.',
+      ],
+      qmsAreas: ['prod', 'change', 'meas'],
+    });
+  }
+
+  // --- TC10: Sterility assurance gap ---
+  if (facts.sterileDevice && !facts.sterilityValidationComplete) {
+    const riskLevel = scenario.manualClass === '3' ? 'HIGH' : 'MEDIUM-HIGH';
+    findings.push({
+      ruleId: 'TC10_STERILITY_VALIDATION_INCOMPLETE',
+      finding:
+        'Sterility validation is incomplete for a sterile device, creating a critical production control gap.',
+      riskLevel,
+      authorities: dedupeCitations([
+        ...baseBindingCitations(),
+        citation('cp7382850'),
+        citation('standards_db'),
+      ]),
+      supportingEvidence: [
+        'The device is identified as sterile.',
+        'Sterility validation is not indicated as complete.',
+      ],
+      inspectionRelevance: [
+        'Under CP 7382.850, incomplete sterility validation for a sterile device presents a critical production controls finding with expansion into design verification and change control.',
+      ],
+      recommendedActions: [
+        'Complete sterility validation including challenge studies and bioburden characterization.',
+        'Document sterility assurance level (SAL) and validation acceptance criteria.',
+        'Establish ongoing process monitoring and environmental controls.',
+      ],
+      qmsAreas: ['prod', 'change', 'meas', 'dd'],
+    });
+  }
+
+  if (facts.sterileDevice && !facts.sterilityRevalidatedAfterChange) {
+    findings.push({
+      ruleId: 'TC10_STERILITY_NOT_REVALIDATED',
+      finding:
+        'Sterilization process was not revalidated after a change to a sterile device.',
+      riskLevel: 'MEDIUM-HIGH',
+      authorities: dedupeCitations([...baseBindingCitations(), citation('cp7382850')]),
+      supportingEvidence: [
+        'The device is sterile.',
+        'Sterilization revalidation after change is not indicated.',
+      ],
+      inspectionRelevance: [],
+      recommendedActions: [
+        'Perform sterilization revalidation following the change.',
+        'Document change impact assessment on sterility assurance.',
+      ],
+      qmsAreas: ['prod', 'change'],
+    });
+  }
+
+  // --- TC11: Training / competency gap ---
+  if (!facts.trainingRecordsMaintained || !facts.competencyAssessed) {
+    const evidence: string[] = [];
+    if (!facts.trainingRecordsMaintained) evidence.push('Training records are not indicated as maintained.');
+    if (!facts.competencyAssessed) evidence.push('Competency assessment is not indicated for personnel performing critical operations.');
+
+    findings.push({
+      ruleId: 'TC11_TRAINING_COMPETENCY_GAP',
+      finding:
+        'Training records or competency assessments are not maintained for personnel performing quality-affecting operations.',
+      riskLevel: 'MEDIUM-HIGH',
+      authorities: dedupeCitations([
+        ...baseBindingCitations(),
+        citation('qmsr_supplemental'),
+        citation('cp7382850'),
+      ]),
+      supportingEvidence: evidence,
+      inspectionRelevance: [
+        'Under CP 7382.850, training and competency documentation gaps affect management oversight, production controls, and design controls (where personnel perform V&V activities).',
+      ],
+      recommendedActions: [
+        'Establish and maintain training records for all personnel performing quality-affecting work.',
+        'Implement competency assessment for critical operations.',
+        'Ensure retraining is triggered when procedures change or after corrective actions.',
+      ],
+      qmsAreas: ['mgmt', 'prod', 'dd'],
+    });
+  }
+
+  // --- TC12: Risk management file incomplete ---
+  if (!facts.riskManagementFileComplete) {
+    const riskLevel = scenario.manualClass === '3' ? 'MEDIUM-HIGH' : 'MEDIUM';
+    findings.push({
+      ruleId: 'TC12_RISK_FILE_INCOMPLETE',
+      finding:
+        'The risk management file is incomplete or missing required sections.',
+      riskLevel,
+      authorities: dedupeCitations([
+        ...baseBindingCitations(),
+        citation('cp7382850'),
+        citation('standards_db'),
+      ]),
+      supportingEvidence: [
+        'Risk management file completeness is not indicated (missing hazard analysis, risk assessment, mitigation, or residual risk documentation).',
+      ],
+      inspectionRelevance: [
+        'Under CP 7382.850, an incomplete risk management file undermines design controls, change control justification, and postmarket feedback integration.',
+      ],
+      recommendedActions: [
+        'Complete risk management file per ISO 14971 requirements.',
+        'Ensure all required sections are documented: hazard identification, risk estimation, risk evaluation, risk control, residual risk evaluation, and production/post-production information.',
+        'Integrate postmarket surveillance data into risk management file.',
+      ],
+      qmsAreas: ['dd', 'meas', 'mgmt'],
+    });
+  }
+
+  if (facts.designChangePresent && !facts.riskFileUpdatedAfterChange) {
+    findings.push({
+      ruleId: 'TC12_RISK_NOT_UPDATED_AFTER_CHANGE',
+      finding:
+        'The risk management file was not updated after a design change.',
+      riskLevel: 'MEDIUM-HIGH',
+      authorities: dedupeCitations([...baseBindingCitations(), citation('cp7382850')]),
+      supportingEvidence: [
+        'A design change is present.',
+        'Risk file update after the change is not indicated.',
+      ],
+      inspectionRelevance: [],
+      recommendedActions: [
+        'Update risk management file to reflect the design change impact.',
+        'Reassess hazards and residual risk in the context of the change.',
+      ],
+      qmsAreas: ['dd', 'change'],
+    });
+  }
+
+  // --- TC13: Incoming acceptance / nonconforming product / calibration ---
+  if (facts.incomingFailuresRecurring && !facts.incomingEscalated) {
+    findings.push({
+      ruleId: 'TC13_INCOMING_NOT_ESCALATED',
+      finding:
+        'Recurring incoming inspection failures have not been escalated to supplier corrective action.',
+      riskLevel: 'MEDIUM-HIGH',
+      authorities: dedupeCitations([...baseBindingCitations(), citation('cp7382850')]),
+      supportingEvidence: [
+        'Recurring incoming material failures are indicated.',
+        'Escalation to supplier corrective action is not indicated.',
+      ],
+      inspectionRelevance: [
+        'Under CP 7382.850, recurring incoming failures without supplier escalation create an outsourcing/purchasing controls finding with expansion into production controls and CAPA.',
+      ],
+      recommendedActions: [
+        'Escalate recurring failures to supplier corrective action.',
+        'Review and strengthen incoming acceptance criteria.',
+        'Evaluate supplier qualification and monitoring program adequacy.',
+      ],
+      qmsAreas: ['out', 'prod', 'meas'],
+    });
+  }
+
+  if (!facts.calibrationCurrent) {
+    findings.push({
+      ruleId: 'TC13_CALIBRATION_LAPSED',
+      finding:
+        'Measurement equipment calibration is lapsed or overdue.',
+      riskLevel: 'MEDIUM',
+      authorities: dedupeCitations([...baseBindingCitations(), citation('cp7382850')]),
+      supportingEvidence: [
+        'Equipment calibration is indicated as lapsed, overdue, or not current.',
+      ],
+      inspectionRelevance: [
+        'Under CP 7382.850, calibration gaps affect measurement/analysis confidence and may invalidate acceptance decisions.',
+      ],
+      recommendedActions: [
+        'Bring all measurement equipment into current calibration status.',
+        'Perform retrospective impact assessment on measurements made with uncalibrated equipment.',
+        'Review calibration schedule and recall procedures.',
+      ],
+      qmsAreas: ['meas', 'prod'],
+    });
+  }
+
+  if (!facts.nonconformingProductControlled) {
+    findings.push({
+      ruleId: 'TC13_NONCONFORMING_NOT_CONTROLLED',
+      finding:
+        'Nonconforming product is not adequately identified, segregated, or controlled.',
+      riskLevel: 'MEDIUM-HIGH',
+      authorities: dedupeCitations([...baseBindingCitations(), citation('cp7382850')]),
+      supportingEvidence: [
+        'Nonconforming product control is not indicated (identification, segregation, or disposition).',
+      ],
+      inspectionRelevance: [
+        'Under CP 7382.850, nonconforming product control failures create production control findings with expansion into CAPA and management oversight.',
+      ],
+      recommendedActions: [
+        'Implement nonconforming product identification, segregation, and disposition procedures.',
+        'Review released product for potential nonconforming units.',
+        'Evaluate CAPA criteria for systemic nonconformance patterns.',
+      ],
+      qmsAreas: ['prod', 'meas', 'mgmt'],
+    });
+  }
+
   // Deduplicate findings by ruleId
   const seenRules = new Set<string>();
   const uniqueFindings = findings.filter((f) => {
