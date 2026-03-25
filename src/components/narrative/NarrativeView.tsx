@@ -16,10 +16,12 @@ import {
   NARRATIVE_SYSTEM_PROMPT,
 } from '@/lib/analysis';
 import { buildAdjudication } from '@/lib/adjudication';
+import { validateNarrative } from '@/lib/narrativeValidator';
 import { useNarrative } from '@/hooks/useNarrative';
 import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/lib/utils';
 import { AdjudicationCard } from '@/components/narrative/AdjudicationCard';
+import { ValidationWarnings } from '@/components/narrative/ValidationWarnings';
 import type { NarrativeViewProps } from '@/types/narrative';
 import type { ScenarioDetailOutletContext } from '@/types/scenarioDetail';
 
@@ -52,6 +54,11 @@ function NarrativeViewInner({
     if (!scenario.risk.trim()) return null;
     return buildAdjudication(scenario, fdaData, flags);
   }, [scenario, fdaData, flags]);
+
+  const validationResult = useMemo(() => {
+    if (!narrative || !adjudication?.triggered) return null;
+    return validateNarrative(narrative, adjudication);
+  }, [narrative, adjudication]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -97,6 +104,10 @@ function NarrativeViewInner({
       ) : null}
 
       {adjudication?.triggered ? <AdjudicationCard adjudication={adjudication} /> : null}
+
+      {validationResult && validationResult.warnings.length > 0 ? (
+        <ValidationWarnings warnings={validationResult.warnings} />
+      ) : null}
 
       {!scenario.risk.trim() ? (
         <div

@@ -55,8 +55,14 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 - Regulatory basis footer (binding + inspection lens citations)
 - NarrativeView labels LLM section as "AI Commentary" when adjudication active
 
+### 5. Post-Generation Narrative Validation (Sprint 5)
+- `narrativeValidator.ts` — validates LLM output against locked adjudication
+- Checks: authority citation presence, prohibited softening phrases, risk level mention
+- `ValidationWarnings.tsx` — amber alert card showing validation issues
+- NarrativeView computes validation after generate, displays warnings between adjudication card and prose
+
 ## Test Coverage
-- **394 tests** across 18 files, all passing
+- **405 tests** across 19 files, all passing
 - **18 fixture scenarios** (13 general + 5 TC-specific from TC4-TC8, plus 3 from TC1-TC3)
 - Regression: all general fixtures return `triggered: false` for adjudication rules
 
@@ -70,6 +76,7 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 - `src/lib/analysis.ts` — buildFocus, buildRiskThread, buildOAIFactors, getOverallReadiness, triangulate, buildNarrativeStructuredPayloadV2, buildNarrativeUserMessage, NARRATIVE_SYSTEM_PROMPT
 - `src/lib/adjudication.ts` — buildAdjudication (TC1-TC8), buildTechnologyGuidance
 - `src/lib/scenarioFacts.ts` — extractScenarioFacts (explicit + regex fallback)
+- `src/lib/narrativeValidator.ts` — validateNarrative (post-generation checks)
 - `src/lib/guardrailRegistry.ts` — GUARDRAILS record, citation helpers
 - `src/lib/signalRegistry.ts` — 17 canonical SignalKeys
 
@@ -82,6 +89,7 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 - `src/components/wizard/Step4Risk.tsx` — Risk text + technology toggles + inspection context fact toggles (TC1-TC8)
 - `src/components/narrative/NarrativeView.tsx` — Computes adjudication, renders AdjudicationCard + LLM prose
 - `src/components/narrative/AdjudicationCard.tsx` — Structured deterministic findings display
+- `src/components/narrative/ValidationWarnings.tsx` — Post-generation validation warning display
 - `src/pages/ScenarioDetail.tsx` — Detail page with outlet context
 
 ### Edge Function
@@ -107,6 +115,5 @@ Compliance conclusions are determined by **deterministic client-side adjudicatio
 - Edge function contract: `{ systemPrompt, userContent } → { text }` (unchanged)
 
 ## Not Yet Implemented
-- Post-generation validation (verify LLM respected locked findings)
 - Edge function deployment (maxTokens change + migration 009)
 - Additional adjudication rules beyond TC8
