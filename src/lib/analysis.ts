@@ -1,3 +1,4 @@
+import { buildAdjudication } from '@/lib/adjudication';
 import { AREA_ORDER, ITYPES, QMS_AREAS, isPremarket } from '@/lib/domain';
 import { getSignalSeveritySummary, hasAnySignal, signalLabel } from '@/lib/signalRegistry';
 import type {
@@ -6,7 +7,9 @@ import type {
   FDARecallRecord,
   FlagItem,
   FlagSeverity,
+  NarrativePayloadVersioned,
   NarrativeStructuredPayload,
+  NarrativeStructuredPayloadV2,
   OAIFactors,
   OAIContext,
   ReadinessContext,
@@ -796,6 +799,8 @@ export const NARRATIVE_SYSTEM_PROMPT = [
   'REQUIRED: separate factual restatement of provided inputs from interpretive inspection-readiness commentary.',
   'REQUIRED: use conditional language when evidence is incomplete (e.g., “if the scenario is accurate…”, “the selected signals suggest…”).',
   'REQUIRED: QMSR terminology only — do not use QSIT-era “subsystems” framing.',
+  'When the user message contains a “LOCKED ADJUDICATION” section, treat each finding as immutable compliance truth — do not soften, contradict, reinterpret, or omit.',
+  'Locked adjudication authorities must be cited by their short labels exactly as supplied.',
   'Write 400–600 words in professional tone for a medical device quality leader.',
 ].join('\n');
 
@@ -868,7 +873,7 @@ export function buildNarrativeStructuredPayload(
   };
 }
 
-export function buildNarrativeUserMessage(payload: NarrativeStructuredPayload): string {
+export function buildNarrativeUserMessage(payload: NarrativePayloadVersioned): string {
   const s = payload.scenarioSummary;
   const sigLine = payload.normalizedSignals.length
     ? payload.normalizedSignals.map((x) => `${x.label} (${x.key})`).join('; ')
@@ -930,9 +935,80 @@ export function buildNarrativeUserMessage(payload: NarrativeStructuredPayload): 
     'Close with balanced, non-alarmist tone suitable for executive review.',
   ];
 
+  // --- Adjudication section (V2 payloads only, when triggered) ---
+  if ('adjudication' in payload && payload.adjudication.triggered) {
+    const adj = payload.adjudication;
+    lines.push('');
+    lines.push('## LOCKED ADJUDICATION (deterministic — do not contradict or soften)');
+    lines.push(`Overall risk level: ${adj.overallRiskLevel}`);
+    lines.push(`Confidence level: ${adj.confidenceLevel}`);
+    lines.push('');
+    for (const f of adj.findings) {
+      lines.push(`### [${f.riskLevel}] ${f.ruleId}: ${f.finding}`);
+      lines.push(`Authorities: ${f.authorities.map((a) => a.shortLabel).join('; ')}`);
+      lines.push(`Affected QMS areas: ${f.qmsAreas.join(', ')}`);
+      if (f.supportingEvidence.length > 0) {
+        lines.push('Evidence:');
+        lines.push(...f.supportingEvidence.map((e) => `- ${e}`));
+      }
+      if (f.inspectionRelevance.length > 0) {
+        lines.push('Inspection relevance:');
+        lines.push(...f.inspectionRelevance.map((r) => `- ${r}`));
+      }
+      if (f.recommendedActions.length > 0) {
+        lines.push('Recommended actions:');
+        lines.push(...f.recommendedActions.map((a) => `- ${a}`));
+      }
+      if (f.legacyCrosswalk && f.legacyCrosswalk.length > 0) {
+        lines.push(...f.legacyCrosswalk.map((lc) => `- ${lc}`));
+      }
+      lines.push('');
+    }
+    if (adj.narrativeProhibitions.length > 0) {
+      lines.push('Narrative prohibitions:');
+      lines.push(...adj.narrativeProhibitions.map((p) => `- ${p}`));
+      lines.push('');
+    }
+    if (adj.fdaSignalLimitations.length > 0) {
+      lines.push('FDA signal limitations:');
+      lines.push(...adj.fdaSignalLimitations.map((l) => `- ${l}`));
+      lines.push('');
+    }
+    const applicableTech = adj.technologyGuidance.filter((tg) => tg.applies);
+    if (applicableTech.length > 0) {
+      lines.push('## Applicable guidance / standards (incorporate where applicable)');
+      for (const tg of applicableTech) {
+        lines.push(`- ${tg.technology}: ${tg.narrativeHint}`);
+        lines.push(`  Citations: ${tg.citations.map((c) => c.shortLabel).join('; ')}`);
+      }
+    }
+  }
+
   return lines.join('\n');
 }
 
+/**
+ * V2 narrative payload: extends V1 with deterministic adjudication.
+ * When adjudication rules fire, the narrative LLM is constrained by locked findings.
+ * When no rules fire, output is identical to V1.
+ */
+export function buildNarrativeStructuredPayloadV2(
+  scenario: Scenario,
+  fdaData: FDAData | null,
+  flags: FlagItem[],
+): NarrativeStructuredPayloadV2 {
+  const v1 = buildNarrativeStructuredPayload(scenario, fdaData, flags);
+  const adjudication = buildAdjudication(scenario, fdaData, flags);
+  // Spread V1 fields and override version + add adjudication
+  const { version: _v, ...rest } = v1;
+  return {
+    ...rest,
+    version: 2,
+    adjudication,
+  } as NarrativeStructuredPayloadV2;
+}
+
+/** Convenience wrapper: V1 path (used by existing tests). */
 export function buildNarrativePrompt(
   scenario: Scenario,
   fdaData: FDAData | null,

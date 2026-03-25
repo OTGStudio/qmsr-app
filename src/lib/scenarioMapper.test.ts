@@ -11,6 +11,7 @@ import {
   baselineClean,
   cyberForcause,
   emptyFDAData,
+  supplierChangeClassIII,
 } from '@/lib/__fixtures__/scenarios';
 import type { SignalKey } from '@/lib/signalRegistry';
 import type { Database } from '@/types/database';
@@ -87,6 +88,22 @@ describe('scenarioToDb', () => {
     const s = { ...baselineClean(), fdaData: undefined };
     expect(scenarioToDb(s).fda_data).toBeNull();
   });
+
+  it('serializes scenarioFacts to scenario_facts JSON', () => {
+    const s = supplierChangeClassIII();
+    const db = scenarioToDb(s);
+    expect(db.scenario_facts).toEqual(s.scenarioFacts);
+  });
+
+  it('nullifies undefined scenarioFacts', () => {
+    const s = { ...baselineClean(), scenarioFacts: undefined };
+    expect(scenarioToDb(s).scenario_facts).toBeNull();
+  });
+
+  it('nullifies null scenarioFacts', () => {
+    const s = baselineClean(); // DEFAULT_SCENARIO has scenarioFacts: null
+    expect(scenarioToDb(s).scenario_facts).toBeNull();
+  });
 });
 
 describe('dbToScenario', () => {
@@ -157,6 +174,25 @@ describe('dbToScenario', () => {
     const row = toMockRow(baselineClean());
     row.class_source = 'something_invalid';
     expect(dbToScenario(row).classSource).toBe('manual');
+  });
+
+  it('deserializes scenario_facts JSONB to scenarioFacts', () => {
+    const original = supplierChangeClassIII();
+    const row = toMockRow(original);
+    const result = dbToScenario(row);
+    expect(result.scenarioFacts).toEqual(original.scenarioFacts);
+  });
+
+  it('returns null for missing scenario_facts', () => {
+    const row = toMockRow(baselineClean());
+    row.scenario_facts = null;
+    expect(dbToScenario(row).scenarioFacts).toBeNull();
+  });
+
+  it('returns null for non-object scenario_facts', () => {
+    const row = toMockRow(baselineClean());
+    row.scenario_facts = 'not an object';
+    expect(dbToScenario(row).scenarioFacts).toBeNull();
   });
 });
 
@@ -268,6 +304,20 @@ describe('mergeScenarioPatch', () => {
     const base = { ...baselineClean(), inspectionNarrative: 'keep' };
     const merged = mergeScenarioPatch(base, { companyName: 'New' });
     expect(merged.inspectionNarrative).toBe('keep');
+  });
+
+  it('replaces scenarioFacts when provided', () => {
+    const base = baselineClean();
+    const facts = { supplierChange: true, supplierChangeEvaluated: false };
+    const merged = mergeScenarioPatch(base, { scenarioFacts: facts });
+    expect(merged.scenarioFacts).toEqual(facts);
+  });
+
+  it('preserves scenarioFacts when not in patch', () => {
+    const facts = { supplierChange: true };
+    const base = { ...baselineClean(), scenarioFacts: facts };
+    const merged = mergeScenarioPatch(base, { companyName: 'New' });
+    expect(merged.scenarioFacts).toEqual(facts);
   });
 
   it('replaces feiVerification when provided', () => {

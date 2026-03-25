@@ -1,5 +1,5 @@
 import { normalizeSignals } from '@/lib/signalRegistry';
-import type { FDAData } from '@/types/analysis';
+import type { FDAData, ScenarioFacts } from '@/types/analysis';
 import type { Database, Json } from '@/types/database';
 import type { FEIVerificationResult } from '@/types/facility';
 import {
@@ -78,6 +78,11 @@ function parseAreaNotes(value: Json | null | undefined): Record<QMSAreaKey, stri
   return empty;
 }
 
+function parseScenarioFacts(value: Json | null | undefined): Partial<ScenarioFacts> | null {
+  if (!isRecord(value)) return null;
+  return value as unknown as Partial<ScenarioFacts>;
+}
+
 /** Temporary storage key for wizard scenario when user must sign in before save. */
 export const PENDING_SCENARIO_STORAGE_KEY = 'qmsr_pending_scenario_v1' as const;
 
@@ -120,6 +125,7 @@ export function scenarioToDb(scenario: Scenario): ScenarioInsert {
     sw_enabled: scenario.swEnabled,
     cyber_enabled: scenario.cyberEnabled,
     pccp_planned: scenario.pccpPlanned,
+    scenario_facts: (scenario.scenarioFacts ?? null) as unknown as Json | null,
     ratings: scenario.ratings as unknown as Json,
     area_notes: scenario.areaNotes as unknown as Json,
     fda_data: (scenario.fdaData ?? null) as unknown as Json | null,
@@ -143,6 +149,8 @@ export function mergeScenarioPatch(base: Scenario, patch: Partial<Scenario>): Sc
       patch.unsupportedSignals !== undefined ? patch.unsupportedSignals : base.unsupportedSignals,
     feiVerification:
       patch.feiVerification !== undefined ? patch.feiVerification : base.feiVerification,
+    scenarioFacts:
+      patch.scenarioFacts !== undefined ? patch.scenarioFacts : base.scenarioFacts,
     fdaData: patch.fdaData !== undefined ? patch.fdaData : base.fdaData,
     fdaPulledAt: patch.fdaPulledAt !== undefined ? patch.fdaPulledAt : base.fdaPulledAt,
     inspectionNarrative:
@@ -175,6 +183,7 @@ export function dbToScenario(row: Tables<'scenarios'>): Scenario {
     swEnabled: row.sw_enabled ?? false,
     cyberEnabled: row.cyber_enabled ?? false,
     pccpPlanned: row.pccp_planned ?? false,
+    scenarioFacts: parseScenarioFacts(row.scenario_facts),
     ratings: parseRatings(row.ratings),
     areaNotes: parseAreaNotes(row.area_notes),
     fdaData: (row.fda_data as FDAData | null | undefined) ?? null,

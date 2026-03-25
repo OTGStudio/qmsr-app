@@ -202,3 +202,112 @@ export interface FDAData {
   /** Percent change of recent vs older window; null when the older sum is zero */
   mdrTrendPercent?: number | null;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Adjudication layer — deterministic compliance conclusions          */
+/* ------------------------------------------------------------------ */
+
+/** Tiered regulatory citation authority levels. */
+export type GuardrailTier =
+  | 'binding'
+  | 'inspection-program'
+  | 'guidance'
+  | 'standard'
+  | 'mdsap'
+  | 'public-signal';
+
+/** A single entry in the guardrail citation registry. */
+export interface GuardrailCitation {
+  readonly key: string;
+  readonly title: string;
+  readonly shortLabel: string;
+  readonly citation: string;
+  readonly url: string;
+  readonly tier: GuardrailTier;
+  readonly alwaysReference?: boolean;
+  readonly rationale: string;
+}
+
+/** Flat boolean facts extracted from scenario text (interim regex-based). */
+export interface ScenarioFacts {
+  readonly supplierChange: boolean;
+  readonly supplierChangeEvaluated: boolean;
+  readonly biocompatibilityReevaluated: boolean;
+  readonly changeClosedWithoutEscalation: boolean;
+
+  readonly complaintTrend: boolean;
+  readonly complaintsMultiple: boolean;
+  readonly investigationOutcome: 'user_error' | 'other' | 'unknown';
+  readonly trendAnalysisPerformed: boolean;
+  readonly capaInitiated: boolean;
+  readonly riskFileUpdated: boolean;
+
+  readonly spreadsheetCriticalCalculation: boolean;
+  readonly calculationErrorPostRelease: boolean;
+  readonly softwareValidationPerformed: boolean;
+  readonly independentReviewPerformed: boolean;
+
+  // TC4: Design change
+  readonly designChangePresent: boolean;
+  readonly designVVReassessed: boolean;
+
+  // TC5: CAPA effectiveness
+  readonly capaClosedPreviously: boolean;
+  readonly issueRecurred: boolean;
+
+  // TC6: Process validation
+  readonly specialProcessPresent: boolean;
+  readonly processValidationDocumented: boolean;
+
+  // TC7: Management review
+  readonly managementReviewPerformed: boolean;
+
+  // TC8: Software lifecycle
+  readonly softwareLifecycleDocumented: boolean;
+}
+
+export type RiskLevel = 'HIGH' | 'MEDIUM-HIGH' | 'MEDIUM' | 'LOW';
+export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
+
+/** A single deterministic adjudication finding. */
+export interface AdjudicationFinding {
+  readonly ruleId: string;
+  readonly finding: string;
+  readonly riskLevel: RiskLevel;
+  readonly authorities: readonly GuardrailCitation[];
+  readonly supportingEvidence: readonly string[];
+  readonly inspectionRelevance: readonly string[];
+  readonly recommendedActions: readonly string[];
+  readonly qmsAreas: readonly QMSAreaKey[];
+  readonly legacyCrosswalk?: readonly string[];
+}
+
+/** Technology-aware guidance routing entry. */
+export interface TechnologyGuidanceEntry {
+  readonly technology: 'ai' | 'software' | 'cybersecurity' | 'mdsap' | 'usp';
+  readonly applies: boolean;
+  readonly citations: readonly GuardrailCitation[];
+  readonly narrativeHint: string;
+}
+
+/** Complete adjudication result (may be empty when no rules fire). */
+export interface AdjudicationResult {
+  readonly triggered: boolean;
+  readonly overallRiskLevel: RiskLevel;
+  readonly confidenceLevel: ConfidenceLevel;
+  readonly findings: readonly AdjudicationFinding[];
+  readonly technologyGuidance: readonly TechnologyGuidanceEntry[];
+  readonly narrativeProhibitions: readonly string[];
+  readonly bindingBasis: readonly GuardrailCitation[];
+  readonly inspectionLens: readonly GuardrailCitation[];
+  readonly fdaSignalLimitations: readonly string[];
+}
+
+/** Version 2 payload — extends version 1 with adjudication. */
+export interface NarrativeStructuredPayloadV2 extends Omit<NarrativeStructuredPayload, 'version'> {
+  readonly version: 2;
+  readonly adjudication: AdjudicationResult;
+}
+
+/** Union type accepted by buildNarrativeUserMessage. */
+export type NarrativePayloadVersioned = NarrativeStructuredPayload | NarrativeStructuredPayloadV2;

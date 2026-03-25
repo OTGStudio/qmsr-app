@@ -104,6 +104,7 @@ export type Database = {
           ratings: Json | null
           regulation_num: string | null
           risk: string | null
+          scenario_facts: Json | null
           signals: string[] | null
           sw_enabled: boolean | null
           unsupported_signals: string[] | null
@@ -137,6 +138,7 @@ export type Database = {
           ratings?: Json | null
           regulation_num?: string | null
           risk?: string | null
+          scenario_facts?: Json | null
           signals?: string[] | null
           sw_enabled?: boolean | null
           unsupported_signals?: string[] | null
@@ -170,6 +172,7 @@ export type Database = {
           ratings?: Json | null
           regulation_num?: string | null
           risk?: string | null
+          scenario_facts?: Json | null
           signals?: string[] | null
           sw_enabled?: boolean | null
           unsupported_signals?: string[] | null

@@ -11,13 +11,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  buildNarrativeStructuredPayload,
+  buildNarrativeStructuredPayloadV2,
   buildNarrativeUserMessage,
   NARRATIVE_SYSTEM_PROMPT,
 } from '@/lib/analysis';
+import { buildAdjudication } from '@/lib/adjudication';
 import { useNarrative } from '@/hooks/useNarrative';
 import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/lib/utils';
+import { AdjudicationCard } from '@/components/narrative/AdjudicationCard';
 import type { NarrativeViewProps } from '@/types/narrative';
 import type { ScenarioDetailOutletContext } from '@/types/scenarioDetail';
 
@@ -39,11 +41,16 @@ function NarrativeViewInner({
 
   const narrativeRequest = useMemo(() => {
     if (!scenario.risk.trim()) return null;
-    const payload = buildNarrativeStructuredPayload(scenario, fdaData, flags);
+    const payload = buildNarrativeStructuredPayloadV2(scenario, fdaData, flags);
     return {
       systemPrompt: NARRATIVE_SYSTEM_PROMPT,
       userContent: buildNarrativeUserMessage(payload),
     };
+  }, [scenario, fdaData, flags]);
+
+  const adjudication = useMemo(() => {
+    if (!scenario.risk.trim()) return null;
+    return buildAdjudication(scenario, fdaData, flags);
   }, [scenario, fdaData, flags]);
 
   return (
@@ -88,6 +95,8 @@ function NarrativeViewInner({
           </p>
         </div>
       ) : null}
+
+      {adjudication?.triggered ? <AdjudicationCard adjudication={adjudication} /> : null}
 
       {!scenario.risk.trim() ? (
         <div
@@ -162,7 +171,14 @@ function NarrativeViewInner({
             <>
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif text-lg">Generated narrative</CardTitle>
+                  <CardTitle className="font-serif text-lg">
+                    {adjudication?.triggered ? 'AI Commentary' : 'Generated narrative'}
+                  </CardTitle>
+                  {adjudication?.triggered ? (
+                    <CardDescription className="text-brand-muted">
+                      LLM-generated prose constrained by the locked adjudication above.
+                    </CardDescription>
+                  ) : null}
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div

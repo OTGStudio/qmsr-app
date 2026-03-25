@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { PRESET_ORDER, PRESETS, type PresetDef } from '@/lib/domain';
 import { cn } from '@/lib/utils';
+import type { ScenarioFacts } from '@/types/analysis';
 import type { Scenario, WizardStepProps } from '@/types/scenario';
 
 const textareaClassName = cn(
@@ -83,12 +84,68 @@ function ToggleRow({ label, labelSuffix, hint, checked, disabled, onToggle }: To
   );
 }
 
+function fact<K extends keyof ScenarioFacts>(
+  scenario: Scenario,
+  key: K,
+): ScenarioFacts[K] | undefined {
+  return scenario.scenarioFacts?.[key] as ScenarioFacts[K] | undefined;
+}
+
+function updateFact(
+  scenario: Scenario,
+  onUpdate: (patch: Partial<Scenario>) => void,
+  patch: Partial<ScenarioFacts>,
+): void {
+  onUpdate({
+    scenarioFacts: {
+      ...(scenario.scenarioFacts ?? {}),
+      ...patch,
+    },
+  });
+}
+
+type InvestigationOutcome = ScenarioFacts['investigationOutcome'];
+
+interface OutcomePillProps {
+  label: string;
+  value: InvestigationOutcome;
+  current: InvestigationOutcome | undefined;
+  onSelect: (value: InvestigationOutcome) => void;
+}
+
+function OutcomePill({ label, value, current, onSelect }: OutcomePillProps) {
+  const active = current === value;
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={() => onSelect(value)}
+      className={cn(
+        'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
+        active
+          ? 'border-brand-text bg-brand-text text-white dark:text-brand-card'
+          : 'border-brand-border bg-brand-card text-brand-text hover:border-brand-muted',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function Step4Risk({ scenario, onUpdate, fieldIdPrefix = '' }: WizardStepProps) {
   const fid = (suffix: string): string => `${fieldIdPrefix}${suffix}`;
   const riskTrimmed = scenario.risk.trim();
   const showRiskLengthWarn = riskTrimmed.length > 0 && riskTrimmed.length < 20;
   const aiOn = scenario.aiEnabled;
   const swEffective = aiOn || scenario.swEnabled;
+
+  const supplierChange = fact(scenario, 'supplierChange') ?? false;
+  const complaintsMultiple = fact(scenario, 'complaintsMultiple') ?? false;
+  const spreadsheet = fact(scenario, 'spreadsheetCriticalCalculation') ?? false;
+  const designChange = fact(scenario, 'designChangePresent') ?? false;
+  const capaClosed = fact(scenario, 'capaClosedPreviously') ?? false;
+  const specialProcess = fact(scenario, 'specialProcessPresent') ?? false;
 
   return (
     <div className="space-y-6">
@@ -231,6 +288,305 @@ export function Step4Risk({ scenario, onUpdate, fieldIdPrefix = '' }: WizardStep
                   onToggle={() => {
                     onUpdate({ pccpPlanned: !scenario.pccpPlanned });
                   }}
+                />
+              </div>
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card className="border-brand-border bg-brand-card">
+        <CardHeader className="space-y-2 pb-2">
+          <p className={cn('text-xs font-semibold uppercase tracking-wide text-brand-muted')}>
+            Inspection context facts
+          </p>
+          <p className="text-sm leading-relaxed text-brand-muted">
+            These optional toggles drive deterministic inspection-readiness adjudication. When set,
+            they override text-based inference from the risk statement.
+          </p>
+        </CardHeader>
+        <CardContent className="px-0 pt-0">
+          {/* TC1: Supplier / material change */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Supplier / material change
+            </p>
+            <ToggleRow
+              label="Supplier or material change involved"
+              hint="A supplier, material, or component change is present in this scenario."
+              checked={supplierChange}
+              onToggle={() => updateFact(scenario, onUpdate, { supplierChange: !supplierChange })}
+            />
+            {supplierChange ? (
+              <>
+                <ToggleRow
+                  label="Change impact evaluated"
+                  hint="The firm performed and documented an impact assessment for the change."
+                  checked={fact(scenario, 'supplierChangeEvaluated') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      supplierChangeEvaluated: !(fact(scenario, 'supplierChangeEvaluated') ?? true),
+                    })
+                  }
+                />
+                <ToggleRow
+                  label="Biocompatibility re-evaluated"
+                  hint="Biocompatibility assessment was revisited after the material/supplier change."
+                  checked={fact(scenario, 'biocompatibilityReevaluated') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      biocompatibilityReevaluated: !(fact(scenario, 'biocompatibilityReevaluated') ?? true),
+                    })
+                  }
+                />
+              </>
+            ) : null}
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC2: Complaint handling */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Complaint handling
+            </p>
+            <ToggleRow
+              label="Multiple or repeated complaints"
+              hint="The scenario involves multiple complaints or a complaint trend."
+              checked={complaintsMultiple}
+              onToggle={() => updateFact(scenario, onUpdate, { complaintsMultiple: !complaintsMultiple })}
+            />
+            {complaintsMultiple ? (
+              <>
+                <div className="flex flex-col gap-2 py-4">
+                  <span className="text-sm font-semibold text-brand-text">
+                    Investigation outcome
+                  </span>
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Investigation outcome">
+                    <OutcomePill
+                      label="User error"
+                      value="user_error"
+                      current={fact(scenario, 'investigationOutcome')}
+                      onSelect={(v) => updateFact(scenario, onUpdate, { investigationOutcome: v })}
+                    />
+                    <OutcomePill
+                      label="Other"
+                      value="other"
+                      current={fact(scenario, 'investigationOutcome')}
+                      onSelect={(v) => updateFact(scenario, onUpdate, { investigationOutcome: v })}
+                    />
+                    <OutcomePill
+                      label="Unknown"
+                      value="unknown"
+                      current={fact(scenario, 'investigationOutcome')}
+                      onSelect={(v) => updateFact(scenario, onUpdate, { investigationOutcome: v })}
+                    />
+                  </div>
+                </div>
+                <ToggleRow
+                  label="Trend analysis performed"
+                  hint="Complaint data has been analyzed for trends and patterns."
+                  checked={fact(scenario, 'trendAnalysisPerformed') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      trendAnalysisPerformed: !(fact(scenario, 'trendAnalysisPerformed') ?? true),
+                    })
+                  }
+                />
+                <ToggleRow
+                  label="CAPA initiated"
+                  hint="A corrective and preventive action has been opened for this complaint pattern."
+                  checked={fact(scenario, 'capaInitiated') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      capaInitiated: !(fact(scenario, 'capaInitiated') ?? true),
+                    })
+                  }
+                />
+                <ToggleRow
+                  label="Risk file updated"
+                  hint="The risk management file has been updated with postmarket complaint data."
+                  checked={fact(scenario, 'riskFileUpdated') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      riskFileUpdated: !(fact(scenario, 'riskFileUpdated') ?? true),
+                    })
+                  }
+                />
+              </>
+            ) : null}
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC3: Data integrity */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Data integrity / critical calculations
+            </p>
+            <ToggleRow
+              label="Spreadsheet used for critical calculations"
+              hint="An Excel or other spreadsheet is used for quality-critical calculations (e.g. dose, tolerance, acceptance criteria)."
+              checked={spreadsheet}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, { spreadsheetCriticalCalculation: !spreadsheet })
+              }
+            />
+            {spreadsheet ? (
+              <>
+                <ToggleRow
+                  label="Post-release calculation error found"
+                  hint="A calculation error (e.g. rounding, formula) was discovered after product release."
+                  checked={fact(scenario, 'calculationErrorPostRelease') ?? false}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      calculationErrorPostRelease: !(fact(scenario, 'calculationErrorPostRelease') ?? false),
+                    })
+                  }
+                />
+                <ToggleRow
+                  label="Software validation performed"
+                  hint="The spreadsheet or calculation tool has been validated per applicable guidance."
+                  checked={fact(scenario, 'softwareValidationPerformed') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      softwareValidationPerformed: !(fact(scenario, 'softwareValidationPerformed') ?? true),
+                    })
+                  }
+                />
+                <ToggleRow
+                  label="Independent review performed"
+                  hint="Critical calculations were independently reviewed or verified."
+                  checked={fact(scenario, 'independentReviewPerformed') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      independentReviewPerformed: !(fact(scenario, 'independentReviewPerformed') ?? true),
+                    })
+                  }
+                />
+              </>
+            ) : null}
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC4: Design change */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Design change
+            </p>
+            <ToggleRow
+              label="Design change present"
+              hint="A design change, modification, or revision has been implemented."
+              checked={designChange}
+              onToggle={() => updateFact(scenario, onUpdate, { designChangePresent: !designChange })}
+            />
+            {designChange ? (
+              <ToggleRow
+                label="V&V reassessed"
+                hint="Verification and validation were reassessed after the design change."
+                checked={fact(scenario, 'designVVReassessed') ?? true}
+                onToggle={() =>
+                  updateFact(scenario, onUpdate, {
+                    designVVReassessed: !(fact(scenario, 'designVVReassessed') ?? true),
+                  })
+                }
+              />
+            ) : null}
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC5: CAPA effectiveness */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              CAPA effectiveness
+            </p>
+            <ToggleRow
+              label="CAPA previously closed"
+              hint="A corrective/preventive action was previously closed for a related issue."
+              checked={capaClosed}
+              onToggle={() => updateFact(scenario, onUpdate, { capaClosedPreviously: !capaClosed })}
+            />
+            {capaClosed ? (
+              <ToggleRow
+                label="Same or similar issue recurred"
+                hint="The same or a similar issue has reappeared after CAPA closure."
+                checked={fact(scenario, 'issueRecurred') ?? false}
+                onToggle={() =>
+                  updateFact(scenario, onUpdate, {
+                    issueRecurred: !(fact(scenario, 'issueRecurred') ?? false),
+                  })
+                }
+              />
+            ) : null}
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC6: Process validation */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Process validation
+            </p>
+            <ToggleRow
+              label="Special process involved"
+              hint="Sterilization, welding, sealing, bonding, coating, or other special process."
+              checked={specialProcess}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, { specialProcessPresent: !specialProcess })
+              }
+            />
+            {specialProcess ? (
+              <ToggleRow
+                label="Process validation documented"
+                hint="The special process has been validated with documented IQ/OQ/PQ."
+                checked={fact(scenario, 'processValidationDocumented') ?? true}
+                onToggle={() =>
+                  updateFact(scenario, onUpdate, {
+                    processValidationDocumented: !(fact(scenario, 'processValidationDocumented') ?? true),
+                  })
+                }
+              />
+            ) : null}
+          </div>
+
+          <div className="my-2 border-t border-brand-border" />
+
+          {/* TC7: Management review */}
+          <div className="px-6">
+            <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Management oversight
+            </p>
+            <ToggleRow
+              label="Management review performed"
+              hint="Management review of the quality system has been conducted and documented."
+              checked={fact(scenario, 'managementReviewPerformed') ?? true}
+              onToggle={() =>
+                updateFact(scenario, onUpdate, {
+                  managementReviewPerformed: !(fact(scenario, 'managementReviewPerformed') ?? true),
+                })
+              }
+            />
+          </div>
+
+          {/* TC8: Software lifecycle (only when swEnabled) */}
+          {swEffective ? (
+            <>
+              <div className="my-2 border-t border-brand-border" />
+              <div className="px-6">
+                <p className="pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                  Software lifecycle
+                </p>
+                <ToggleRow
+                  label="Software lifecycle documented"
+                  hint="Software lifecycle processes, requirements, architecture, and verification records are maintained."
+                  checked={fact(scenario, 'softwareLifecycleDocumented') ?? true}
+                  onToggle={() =>
+                    updateFact(scenario, onUpdate, {
+                      softwareLifecycleDocumented: !(fact(scenario, 'softwareLifecycleDocumented') ?? true),
+                    })
+                  }
                 />
               </div>
             </>

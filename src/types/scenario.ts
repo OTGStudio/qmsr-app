@@ -1,4 +1,4 @@
-import type { FDAData } from './analysis';
+import type { FDAData, ScenarioFacts } from './analysis';
 import type { SignalKey } from '@/lib/signalRegistry';
 import type { FEIVerificationResult } from '@/types/facility';
 
@@ -61,6 +61,8 @@ export interface Scenario {
   swEnabled: boolean;
   cyberEnabled: boolean;
   pccpPlanned: boolean;
+  /** Structured inspection-context facts (optional; overrides regex extraction when set). */
+  scenarioFacts?: Partial<ScenarioFacts> | null;
   // Self-assessment
   ratings: ScenarioRatings;
   areaNotes: Record<QMSAreaKey, string>;
@@ -100,6 +102,7 @@ export const DEFAULT_SCENARIO = {
   swEnabled: false,
   cyberEnabled: false,
   pccpPlanned: false,
+  scenarioFacts: null,
   ratings: DEFAULT_RATINGS,
   areaNotes: { mgmt: '', dd: '', prod: '', change: '', out: '', meas: '' },
   fdaData: null,

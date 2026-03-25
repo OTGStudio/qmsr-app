@@ -280,6 +280,264 @@ export function contradictoryPremarket(): Scenario {
   };
 }
 
+// ── adjudication test case factories ─────────────────────────────────
+
+/** TC1: Class III supplier change with no evaluation — triggers adjudication. */
+export function supplierChangeClassIII(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC1 — Supplier change Class III',
+    companyName: 'Implant Dynamics',
+    productName: 'Spinal Fusion Cage',
+    feiNumber: '9999900001',
+    feiVerification: null,
+    inspType: 'nonBaseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '3',
+    classSource: 'manual',
+    deviceClass: '3',
+    risk: 'Supplier material change on Class III implant. No update performed on risk assessment. Biocompatibility not re-evaluated. Change closed without escalation.',
+    signals: ['supplier_change'],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      supplierChange: true,
+      supplierChangeEvaluated: false,
+      biocompatibilityReevaluated: false,
+      changeClosedWithoutEscalation: true,
+    },
+    ratings: { mgmt: 'partial', dd: 'partial', prod: 'partial', change: 'weak', out: 'weak', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC2: Multiple complaints attributed to user error with no trending — triggers adjudication. */
+export function complaintsUserError(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC2 — Complaints user error',
+    companyName: 'DiagnostiCo',
+    productName: 'Blood Glucose Monitor',
+    feiNumber: '9999900002',
+    feiVerification: null,
+    inspType: 'compliance',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'Multiple complaints attributed to user error. Trend analysis not performed. No CAPA initiated. Risk file not updated.',
+    signals: ['complaint_trend'],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      complaintsMultiple: true,
+      complaintTrend: true,
+      investigationOutcome: 'user_error',
+      trendAnalysisPerformed: false,
+      capaInitiated: false,
+      riskFileUpdated: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'partial', prod: 'partial', change: 'partial', out: 'partial', meas: 'weak' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC3: Unvalidated spreadsheet with post-release calculation error — triggers adjudication. */
+export function unvalidatedSpreadsheet(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC3 — Unvalidated spreadsheet',
+    companyName: 'PrecisionMed',
+    productName: 'Drug Eluting Stent',
+    feiNumber: '9999900003',
+    feiVerification: null,
+    inspType: 'baseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'Spreadsheet used for critical dose calculations. Rounding error found post-release. Software validation: not performed. No independent review.',
+    signals: ['software_anomaly'],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      spreadsheetCriticalCalculation: true,
+      calculationErrorPostRelease: true,
+      softwareValidationPerformed: false,
+      independentReviewPerformed: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'weak', prod: 'weak', change: 'partial', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC4: Design change without V&V reassessment — triggers adjudication. */
+export function designChangeNoVV(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC4 — Design change no V&V',
+    companyName: 'OrthoDesign',
+    productName: 'Hip Replacement System',
+    feiNumber: '9999900004',
+    feiVerification: null,
+    inspType: 'nonBaseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '3',
+    classSource: 'manual',
+    deviceClass: '3',
+    risk: 'Design change to bearing surface geometry. V&V not reassessed after modification.',
+    signals: [],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      designChangePresent: true,
+      designVVReassessed: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'weak', prod: 'partial', change: 'weak', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC5: CAPA recurrence — triggers adjudication. */
+export function capaRecurrence(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC5 — CAPA recurrence',
+    companyName: 'MedFlow',
+    productName: 'Infusion Set',
+    feiNumber: '9999900005',
+    feiVerification: null,
+    inspType: 'forcause',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'CAPA closed for connector leak issue. Same issue recurred in subsequent production lot.',
+    signals: ['recurring_capa'],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      capaClosedPreviously: true,
+      issueRecurred: true,
+    },
+    ratings: { mgmt: 'partial', dd: 'partial', prod: 'weak', change: 'partial', out: 'partial', meas: 'weak' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC6: Process validation gap — triggers adjudication. */
+export function processValidationGap(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC6 — Process validation gap',
+    companyName: 'SterileTech',
+    productName: 'Sterile Surgical Kit',
+    feiNumber: '9999900006',
+    feiVerification: null,
+    inspType: 'baseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'Sterilization is a special process. Process validation not documented.',
+    signals: [],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      specialProcessPresent: true,
+      processValidationDocumented: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'partial', prod: 'weak', change: 'partial', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC7: Management review deficiency — triggers adjudication. */
+export function managementReviewMissing(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC7 — Management review missing',
+    companyName: 'QuickMed',
+    productName: 'Diagnostic Test Kit',
+    feiNumber: '9999900007',
+    feiVerification: null,
+    inspType: 'baseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'General device risk. Management review not performed for quality system.',
+    signals: [],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: false,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      managementReviewPerformed: false,
+    },
+    ratings: { mgmt: 'weak', dd: 'partial', prod: 'partial', change: 'partial', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
+/** TC8: Software lifecycle gap — triggers adjudication. */
+export function softwareLifecycleGap(): Scenario {
+  return {
+    ...DEFAULT_SCENARIO,
+    name: 'TC8 — Software lifecycle gap',
+    companyName: 'SoftMed',
+    productName: 'Patient Monitoring Software',
+    feiNumber: '9999900008',
+    feiVerification: null,
+    inspType: 'baseline',
+    marketedUS: true,
+    pathway: 'standard',
+    manualClass: '2',
+    classSource: 'manual',
+    risk: 'Software-enabled device. Software lifecycle not maintained or documented.',
+    signals: ['software_anomaly'],
+    unsupportedSignals: [],
+    aiEnabled: false,
+    swEnabled: true,
+    cyberEnabled: false,
+    pccpPlanned: false,
+    scenarioFacts: {
+      softwareLifecycleDocumented: false,
+    },
+    ratings: { mgmt: 'partial', dd: 'weak', prod: 'partial', change: 'partial', out: 'partial', meas: 'partial' },
+    areaNotes: { ...emptyAreaNotes },
+    inspectionNarrative: '',
+  };
+}
+
 // ── FDA data factories ───────────────────────────────────────────────
 
 export function emptyFDAData(): FDAData {

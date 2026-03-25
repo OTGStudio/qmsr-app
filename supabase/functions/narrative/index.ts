@@ -81,9 +81,13 @@ Deno.serve(async (req) => {
         ? body.systemPrompt
         : DEFAULT_SYSTEM;
 
+    // Adjudication-constrained requests need more tokens to incorporate locked findings
+    const hasAdjudication = userContent.includes('## LOCKED ADJUDICATION');
+    const maxTokens = hasAdjudication ? 1280 : 1024;
+
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
+      max_tokens: maxTokens,
       system,
       messages: [{ role: 'user', content: userContent }],
     });
